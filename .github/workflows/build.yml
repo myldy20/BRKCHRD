@@ -1,7 +1,6 @@
 name: build
 
 on:
-  push:
   pull_request:
 
 concurrency:
@@ -33,27 +32,6 @@ jobs:
         with:
           name: brkchrd-audio-demo
           path: brkchrd-demo.wav
-
-  macos:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install SDL2
-        run: brew install sdl2
-      - name: Configure
-        run: cmake -S . -B build-macos -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
-      - name: Build
-        run: cmake --build build-macos --parallel 3
-      - name: Test
-        run: ctest --test-dir build-macos --output-on-failure
-      - name: Assemble desktop test bundle
-        run: |
-          mkdir -p dist/brkchrd-macos
-          cp build-macos/brkchrd-sdl build-macos/brkchrd-render README.md LICENSE THIRD_PARTY_NOTICES.md dist/brkchrd-macos/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: brkchrd-macos-arm64
-          path: dist/brkchrd-macos
 
   portmaster-aarch64:
     runs-on: ubuntu-24.04-arm
