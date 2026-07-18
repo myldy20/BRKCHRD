@@ -1,15 +1,12 @@
 {
   "version": 2,
   "name": "brkchrd.zip",
-  "items": [
-    "BRKCHRD.sh",
-    "brkchrd"
-  ],
+  "items": ["BRKCHRD.sh", "brkchrd"],
   "items_opt": null,
   "attr": {
     "title": "BRKCHRD",
-    "desc": "Open chord performance synth built around the TrimUI Brick face buttons, D-pad and rear controls.",
-    "inst": "Built for TrimUI Brick with Knulli/PortMaster. Hold a chord and use the D-pad to change its colour.",
+    "desc": "Open chord-performance synth with functional harmony, ten synthesis engines and editable effects.",
+    "inst": "Verified build target: TrimUI Brick with Knulli/PortMaster. Configuration and logs are stored under brkchrd/conf.",
     "genres": ["music"],
     "porter": ["myldy20"],
     "image": {},

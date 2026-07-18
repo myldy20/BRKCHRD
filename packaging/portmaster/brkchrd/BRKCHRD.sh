@@ -26,6 +26,7 @@ cd "$GAMEDIR" || exit 1
 
 export XDG_CONFIG_HOME="$CONFDIR"
 export XDG_DATA_HOME="$CONFDIR"
+export BRKCHRD_HANDHELD=1
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export LD_LIBRARY_PATH="$GAMEDIR/libs.${DEVICE_ARCH}:$LD_LIBRARY_PATH"
 
@@ -37,6 +38,6 @@ fi
 $GPTOKEYB "brkchrd-sdl.${DEVICE_ARCH}" &
 pm_platform_helper "$BIN"
 "$BIN" > "$CONFDIR/brkchrd.log" 2>&1
-app_status=$?
+status=$?
 pm_finish
-exit "$app_status"
+exit "$status"

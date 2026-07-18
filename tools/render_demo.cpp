@@ -1,41 +1,29 @@
 #include "brkchrd/music.hpp"
 #include "brkchrd/synth.hpp"
 
-#include <algorithm>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
 
-using namespace brkchrd;
-
 int main(int argc, char** argv) {
-    const std::string path = argc > 1 ? argv[1] : "brkchrd-demo.wav";
-    constexpr int sample_rate = 48000;
-    SynthEngine synth(sample_rate);
-    synth.set_preset(0);
-    synth.set_mode(PlayMode::Strum);
-    synth.set_bpm(92);
-
+    const std::string path = argc > 1 ? argv[1] : "brkchrd-v020-demo.wav";
+    constexpr int rate = 48000;
+    brkchrd::SynthEngine synth(rate);
     std::vector<float> output;
     std::vector<int> previous;
-    const Face progression[] = {Face::A, Face::B, Face::X, Face::Y, Face::A, Face::Y, Face::B, Face::A};
-    const Direction colours[] = {Direction::Center, Direction::UpRight, Direction::Right, Direction::DownRight,
-                                 Direction::Down, Direction::UpLeft, Direction::DownLeft, Direction::Center};
-    for (std::size_t i = 0; i < 8; ++i) {
-        const ChordSpec chord = make_chord(0, 0, progression[i], 0, static_cast<int>(i / 3) % 3, colours[i]);
-        previous = voice_lead(chord, previous);
+    const std::vector<brkchrd::Face> progression{brkchrd::Face::A, brkchrd::Face::Y, brkchrd::Face::X, brkchrd::Face::B};
+    for (int preset : {0,1,2,3,4,5,6,7,8,9}) {
+        synth.set_preset(preset);
+        const auto chord = brkchrd::make_chord(0, 0, progression[static_cast<std::size_t>(preset % 4)], 0, preset == 7 ? 2 : 0, preset == 7 ? brkchrd::Direction::Up : brkchrd::Direction::DownRight);
+        previous = brkchrd::voice_lead(chord, previous);
         synth.play_chord(previous);
-        auto block = synth.render_copy(sample_rate * 2);
-        output.insert(output.end(), block.begin(), block.end());
+        auto section = synth.render_copy(static_cast<std::size_t>(rate * 2));
+        output.insert(output.end(), section.begin(), section.end());
+        synth.release_chord();
+        auto tail = synth.render_copy(static_cast<std::size_t>(rate / 2));
+        output.insert(output.end(), tail.begin(), tail.end());
     }
-    synth.release_chord();
-    auto tail = synth.render_copy(sample_rate * 3);
-    output.insert(output.end(), tail.begin(), tail.end());
-    if (!write_wav(path, output, sample_rate)) {
-        std::cerr << "Could not write " << path << '\n';
-        return EXIT_FAILURE;
-    }
+    if (!brkchrd::write_wav(path, output, rate)) { std::cerr << "Could not write " << path << '\n'; return 1; }
     std::cout << "Wrote " << path << '\n';
-    return EXIT_SUCCESS;
+    return 0;
 }

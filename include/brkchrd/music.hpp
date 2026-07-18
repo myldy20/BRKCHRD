@@ -36,7 +36,6 @@ ChordSpec make_chord(int key_pc,
                      int chord_bank,
                      int colour_palette,
                      Direction direction);
-
 std::vector<int> voice_lead(const ChordSpec& chord, const std::vector<int>& previous);
 std::string face_label(int key_pc, Face face, int chord_bank);
 std::string direction_label(int colour_palette, Direction direction);
