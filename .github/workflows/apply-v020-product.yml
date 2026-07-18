@@ -1,0 +1,65 @@
+name: apply-v020-product
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-alpha
+    paths:
+      - '.github/workflows/apply-v020-product.yml'
+      - 'tools/v020parts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-alpha
+          fetch-depth: 0
+
+      - name: Decode and verify product tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/v020parts/part-* | base64 --decode > /tmp/brkchrd-v020.tar.gz
+          echo 'a469e88dd978ca3c238088d5610d1fead6d9df76a908fd8b591f7fe3aa9e71d1  /tmp/brkchrd-v020.tar.gz' | sha256sum --check
+          tar -tzf /tmp/brkchrd-v020.tar.gz >/tmp/brkchrd-v020-files.txt
+          grep -q '^src/sdl_main.cpp$' /tmp/brkchrd-v020-files.txt
+          grep -q '^docs/manual.ru.md$' /tmp/brkchrd-v020-files.txt
+          grep -q '^docs/manual.en.md$' /tmp/brkchrd-v020-files.txt
+
+      - name: Apply BRKCHRD 0.2 tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/brkchrd-v020.tar.gz -C .
+          rm -f src/sdl_main_part1.inc src/sdl_main_part2.inc src/sdl_main_part3.inc
+          rm -f docs/alpha-test-checklist.md docs/research-and-workflow.md
+          rm -rf tools/v020parts
+          rm -f .github/workflows/apply-v020-product.yml
+
+      - name: Validate core before publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-apply -DCMAKE_BUILD_TYPE=Release -DBRKCHRD_BUILD_SDL=OFF
+          cmake --build build-apply --parallel 2
+          ctest --test-dir build-apply --output-on-failure
+          ./build-apply/brkchrd-render /tmp/brkchrd-v020-demo.wav
+          test -s /tmp/brkchrd-v020-demo.wav
+          rm -rf build-apply
+
+      - name: Commit product preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'BRKCHRD 0.2.0 product preview'
+          git push origin HEAD:agent/brkchrd-alpha
