@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnose:
+  apply:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/brkchrd-alpha'
     runs-on: ubuntu-latest
     steps:
@@ -21,20 +21,63 @@ jobs:
         with:
           ref: agent/brkchrd-alpha
           fetch-depth: 0
-      - name: Persist payload fingerprints once
+
+      - name: Decode and verify product tree
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f tools/v020-diagnostics.txt ]; then
-            cat tools/v020-diagnostics.txt
-            exit 0
-          fi
-          : > tools/v020-diagnostics.txt
-          for file in tools/v020parts/part-*; do
-            printf '%s=%s:%s\n' "$(basename "$file")" "$(wc -c < "$file")" "$(sha256sum "$file" | cut -d' ' -f1)" >> tools/v020-diagnostics.txt
-          done
+          cat >/tmp/v020-parts.sha256 <<'EOF'
+          74977ca9c6a17632da0446529e277826d25581a657622e1eeb017fe415e0d6f2  tools/v020parts/part-00
+          a3343c36f95fea60e1c970086c89b403c3cc6a06aa8e9d59acc6d76851bbdd6b  tools/v020parts/part-01
+          fce6dcd5b1abcd6d4792ff2b7c3064d64c9ae06fa4c9fbb2c28e53593c11561d  tools/v020parts/part-02
+          d72d395f23d377da0e1f80f5bf5d11a531def204791cc43cf4c1ece014cee7fd  tools/v020parts/part-03
+          999824296b16494b7e4aba7b1c55c7a903f96ee5341093093c4249dcd03e246e  tools/v020parts/part-04
+          016343fe046dec2279af6aee205659a65410c4a91c3ccd2a46e68838a94bc350  tools/v020parts/part-05
+          89c85e4d2fb11a6f76f484c85dd0bbd57900a45646dcbfc276ecc21e5b829079  tools/v020parts/part-06
+          214fd018a33c1c96ec98dcf5e83aaa26387ec63e6dfea88dada3ec7b3f801b66  tools/v020parts/part-07
+          8cb8a9b3603820d6436d2b89469d9ad63d9939f07b3258077130a0f0042e8a8d  tools/v020parts/part-08
+          0b9529bca42e3aaa666952e18cba55b979ad1a1ce737d04e375fd3742b8fdabc  tools/v020parts/part-0900
+          8ce9e03ba498f6ba7b063a28c7f9fb4c88af5848dea20bd488e83d8090b0d102  tools/v020parts/part-0901
+          7aa4d562ea51ac15d5f9d3deffce887dafa7f978ebba341365bc9259b5a8a47d  tools/v020parts/part-0902
+          d333b7c42d34ba0d276c481d238d48c197efc9bfbd5fa8a2e6e19da8db6f38b3  tools/v020parts/part-0903
+          EOF
+          sha256sum --check /tmp/v020-parts.sha256
+          cat tools/v020parts/part-* | base64 --decode > /tmp/brkchrd-v020.tar.gz
+          echo 'a469e88dd978ca3c238088d5610d1fead6d9df76a908fd8b591f7fe3aa9e71d1  /tmp/brkchrd-v020.tar.gz' | sha256sum --check
+          tar -tzf /tmp/brkchrd-v020.tar.gz >/tmp/brkchrd-v020-files.txt
+          grep -q '^src/sdl_main.cpp$' /tmp/brkchrd-v020-files.txt
+          grep -q '^docs/manual.ru.md$' /tmp/brkchrd-v020-files.txt
+          grep -q '^docs/manual.en.md$' /tmp/brkchrd-v020-files.txt
+
+      - name: Apply BRKCHRD 0.2 tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/brkchrd-v020.tar.gz -C .
+          rm -f src/sdl_main_part1.inc src/sdl_main_part2.inc src/sdl_main_part3.inc
+          rm -f docs/alpha-test-checklist.md docs/research-and-workflow.md
+          rm -rf tools/v020parts
+          rm -f tools/v020-diagnostics.txt
+          rm -f .github/workflows/apply-v020-product.yml
+
+      - name: Validate core before publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-apply -DCMAKE_BUILD_TYPE=Release -DBRKCHRD_BUILD_SDL=OFF
+          cmake --build build-apply --parallel 2
+          ctest --test-dir build-apply --output-on-failure
+          ./build-apply/brkchrd-render /tmp/brkchrd-v020-demo.wav
+          test -s /tmp/brkchrd-v020-demo.wav
+          rm -rf build-apply
+
+      - name: Commit product preview
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
-          git add tools/v020-diagnostics.txt
-          git commit -m 'Record BRKCHRD 0.2 payload diagnostics'
+          git add -A
+          git diff --cached --check
+          git commit -m 'BRKCHRD 0.2.0 product preview'
           git push origin HEAD:agent/brkchrd-alpha
