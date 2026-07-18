@@ -1,7 +1,9 @@
 name: build
 
 on:
+  push:
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
@@ -26,12 +28,20 @@ jobs:
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
           test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render audio demo
-        run: build/brkchrd-render brkchrd-demo.wav
+      - name: Render ten-engine demo
+        run: build/brkchrd-render brkchrd-v020-demo.wav
+      - name: Check bilingual documentation
+        run: |
+          test -f docs/manual.en.md
+          test -f docs/manual.ru.md
+          test -f docs/controls.en.md
+          test -f docs/controls.ru.md
+          test -f docs/sound-design.en.md
+          test -f docs/sound-design.ru.md
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-audio-demo
-          path: brkchrd-demo.wav
+          name: brkchrd-v020-audio-demo
+          path: brkchrd-v020-demo.wav
 
   portmaster-aarch64:
     runs-on: ubuntu-24.04-arm
@@ -53,11 +63,14 @@ jobs:
             '
       - name: Inspect binary and package
         run: |
-          file build-aarch64/brkchrd-sdl
-          unzip -l dist/brkchrd-aarch64-test.zip | tee /tmp/package.txt
+          file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
+          grep -q 'ARM aarch64' /tmp/binary.txt
+          unzip -l dist/brkchrd-v0.2.0-portmaster.zip | tee /tmp/package.txt
           grep -q 'BRKCHRD.sh' /tmp/package.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/package.txt
+          grep -q 'brkchrd/docs/manual.en.md' /tmp/package.txt
+          grep -q 'brkchrd/docs/manual.ru.md' /tmp/package.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-portmaster-aarch64
-          path: dist/brkchrd-aarch64-test.zip
+          name: brkchrd-v020-portmaster-aarch64
+          path: dist/brkchrd-v0.2.0-portmaster.zip
