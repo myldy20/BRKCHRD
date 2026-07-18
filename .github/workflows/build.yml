@@ -1,0 +1,85 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: SDL startup smoke test
+        run: |
+          set +e
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          status=$?
+          test "$status" -eq 0 -o "$status" -eq 124
+      - name: Render audio demo
+        run: build/brkchrd-render brkchrd-demo.wav
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-audio-demo
+          path: brkchrd-demo.wav
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2
+        run: brew install sdl2
+      - name: Configure
+        run: cmake -S . -B build-macos -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+      - name: Build
+        run: cmake --build build-macos --parallel 3
+      - name: Test
+        run: ctest --test-dir build-macos --output-on-failure
+      - name: Assemble desktop test bundle
+        run: |
+          mkdir -p dist/brkchrd-macos
+          cp build-macos/brkchrd-sdl build-macos/brkchrd-render README.md LICENSE THIRD_PARTY_NOTICES.md dist/brkchrd-macos/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-macos-arm64
+          path: dist/brkchrd-macos
+
+  portmaster-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build in Ubuntu 20.04 AArch64 container
+        run: |
+          docker run --rm \
+            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
+            bash -ec '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
+              cmake --build build-aarch64 --parallel 2
+              ctest --test-dir build-aarch64 --output-on-failure
+              strip build-aarch64/brkchrd-sdl
+              ./tools/package_portmaster.sh build-aarch64 dist
+            '
+      - name: Inspect binary and package
+        run: |
+          file build-aarch64/brkchrd-sdl
+          unzip -l dist/brkchrd-aarch64-test.zip | tee /tmp/package.txt
+          grep -q 'BRKCHRD.sh' /tmp/package.txt
+          grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/package.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-portmaster-aarch64
+          path: dist/brkchrd-aarch64-test.zip
