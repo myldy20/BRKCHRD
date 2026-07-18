@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gameList>
+  <game>
+    <path>./BRKCHRD.sh</path>
+    <name>BRKCHRD</name>
+    <desc>Open chord performance synth for TrimUI Brick.</desc>
+    <releasedate>20260718T000000</releasedate>
+    <developer>Myldy design</developer>
+    <publisher>Myldy design</publisher>
+    <genre>Music</genre>
+  </game>
+</gameList>
