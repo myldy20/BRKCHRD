@@ -26,6 +26,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -d tools/v020parts ]; then
+            echo 'BRKCHRD 0.2 payload already applied'
+            exit 0
+          fi
           cat >/tmp/v020-parts.sha256 <<'EOF'
           74977ca9c6a17632da0446529e277826d25581a657622e1eeb017fe415e0d6f2  tools/v020parts/part-00
           a3343c36f95fea60e1c970086c89b403c3cc6a06aa8e9d59acc6d76851bbdd6b  tools/v020parts/part-01
@@ -54,11 +58,11 @@ jobs:
         run: |
           set -euo pipefail
           tar -xzf /tmp/brkchrd-v020.tar.gz -C .
+          git restore --source=HEAD -- .github/workflows/build.yml .github/workflows/apply-v020-product.yml
           rm -f src/sdl_main_part1.inc src/sdl_main_part2.inc src/sdl_main_part3.inc
           rm -f docs/alpha-test-checklist.md docs/research-and-workflow.md
           rm -rf tools/v020parts
           rm -f tools/v020-diagnostics.txt
-          rm -f .github/workflows/apply-v020-product.yml
 
       - name: Validate core before publishing
         shell: bash
