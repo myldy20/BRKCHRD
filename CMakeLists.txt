@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.16)
+project(brkchrd VERSION 0.1.0 LANGUAGES CXX)
+
+option(BRKCHRD_BUILD_SDL "Build the SDL2 application" ON)
+option(BRKCHRD_BUILD_TESTS "Build tests" ON)
+
+add_library(brkchrd_core
+    src/music.cpp
+    src/synth.cpp
+)
+target_include_directories(brkchrd_core PUBLIC include)
+target_compile_features(brkchrd_core PUBLIC cxx_std_20)
+target_compile_options(brkchrd_core PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+
+add_executable(brkchrd-render tools/render_demo.cpp)
+target_link_libraries(brkchrd-render PRIVATE brkchrd_core)
+
+if(BRKCHRD_BUILD_TESTS)
+    enable_testing()
+    add_executable(brkchrd-tests tests/test_main.cpp)
+    target_link_libraries(brkchrd-tests PRIVATE brkchrd_core)
+    add_test(NAME brkchrd-tests COMMAND brkchrd-tests)
+endif()
+
+if(BRKCHRD_BUILD_SDL)
+    find_package(SDL2 QUIET)
+    if(NOT TARGET SDL2::SDL2)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(SDL2 QUIET IMPORTED_TARGET sdl2)
+        endif()
+    endif()
+    if(TARGET SDL2::SDL2)
+        set(BRKCHRD_SDL_TARGET SDL2::SDL2)
+    elseif(TARGET PkgConfig::SDL2)
+        set(BRKCHRD_SDL_TARGET PkgConfig::SDL2)
+    endif()
+    if(BRKCHRD_SDL_TARGET)
+        add_executable(brkchrd-sdl src/sdl_main.cpp)
+        target_link_libraries(brkchrd-sdl PRIVATE brkchrd_core ${BRKCHRD_SDL_TARGET})
+        if(TARGET SDL2::SDL2main)
+            target_link_libraries(brkchrd-sdl PRIVATE SDL2::SDL2main)
+        endif()
+    else()
+        message(WARNING "SDL2 not found; brkchrd-sdl will not be built")
+    endif()
+endif()
