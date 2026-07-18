@@ -45,9 +45,9 @@ jobs:
           cat tools/v020parts/part-* | base64 --decode > /tmp/brkchrd-v020.tar.gz
           echo 'a469e88dd978ca3c238088d5610d1fead6d9df76a908fd8b591f7fe3aa9e71d1  /tmp/brkchrd-v020.tar.gz' | sha256sum --check
           tar -tzf /tmp/brkchrd-v020.tar.gz >/tmp/brkchrd-v020-files.txt
-          grep -q '^src/sdl_main.cpp$' /tmp/brkchrd-v020-files.txt
-          grep -q '^docs/manual.ru.md$' /tmp/brkchrd-v020-files.txt
-          grep -q '^docs/manual.en.md$' /tmp/brkchrd-v020-files.txt
+          grep -q '^./src/sdl_main.cpp$' /tmp/brkchrd-v020-files.txt
+          grep -q '^./docs/manual.ru.md$' /tmp/brkchrd-v020-files.txt
+          grep -q '^./docs/manual.en.md$' /tmp/brkchrd-v020-files.txt
 
       - name: Apply BRKCHRD 0.2 tree
         shell: bash
