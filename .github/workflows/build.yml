@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libsdl2-dev
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
@@ -37,19 +37,19 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Build in Ubuntu 20.04 AArch64 container
+      - name: Build and package in Ubuntu 20.04 AArch64 container
         run: |
           docker run --rm \
             -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
             bash -ec '
               export DEBIAN_FRONTEND=noninteractive
-              apt-get update
-              apt-get install -y --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
               cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
               cmake --build build-aarch64 --parallel 2
               ctest --test-dir build-aarch64 --output-on-failure
               strip build-aarch64/brkchrd-sdl
-              ./tools/package_portmaster.sh build-aarch64 dist
+              sh ./tools/package_portmaster.sh build-aarch64 dist
             '
       - name: Inspect binary and package
         run: |
