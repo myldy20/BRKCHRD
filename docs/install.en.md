@@ -1,30 +1,54 @@
-# Installation on TrimUI Brick / Knulli
+# Installing BRKCHRD 0.3 on TrimUI Brick / Knulli
 
 ## Requirements
 
 - TrimUI Brick running Knulli/PortMaster;
-- AArch64 build artifact from a successful GitHub Actions run;
-- approximately 2 MB free space plus configuration/log files;
-- SSH is optional but recommended for rapid testing.
+- the `brkchrd-v030-portmaster-aarch64` artifact from a successful GitHub Actions run;
+- approximately 2 MB free space plus configuration and log files;
+- SSH is optional but is the fastest update method.
+
+GitHub wraps the artifact in an outer ZIP. The actual installation archive inside it is:
+
+```text
+brkchrd-v0.3.0-portmaster.zip
+```
 
 ## Install through SSH
 
-Assume the downloaded inner package is named `brkchrd-v0.2.0-portmaster.zip` and the console is available as `trimui` in `~/.ssh/config`.
+With a `trimui` alias in `~/.ssh/config`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.2.0-portmaster.zip trimui:/userdata/system/
+scp ~/Downloads/brkchrd-v0.3.0-portmaster.zip trimui:/userdata/system/
 ssh trimui '
-  unzip -o /userdata/system/brkchrd-v0.2.0-portmaster.zip -d /userdata/roms/ports/ &&
+  unzip -o /userdata/system/brkchrd-v0.3.0-portmaster.zip -d /userdata/roms/ports/ &&
   chmod +x "/userdata/roms/ports/BRKCHRD.sh" &&
   chmod +x /userdata/roms/ports/brkchrd/*.aarch64 &&
   sync && reboot
 '
 ```
 
-Without an SSH alias:
+Without an alias:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.2.0-portmaster.zip root@10.53.219.134:/userdata/system/
+scp ~/Downloads/brkchrd-v0.3.0-portmaster.zip \
+  root@10.53.219.134:/userdata/system/
+```
+
+Then connect:
+
+```bash
+ssh root@10.53.219.134
+```
+
+And run:
+
+```bash
+unzip -o /userdata/system/brkchrd-v0.3.0-portmaster.zip \
+  -d /userdata/roms/ports/
+chmod +x "/userdata/roms/ports/BRKCHRD.sh"
+chmod +x /userdata/roms/ports/brkchrd/*.aarch64
+sync
+reboot
 ```
 
 ## Expected installation tree
@@ -37,17 +61,34 @@ scp ~/Downloads/brkchrd-v0.2.0-portmaster.zip root@10.53.219.134:/userdata/syste
 /userdata/roms/ports/brkchrd/conf/
 ```
 
-`conf/` is created or reused at runtime. Reinstalling with `unzip -o` does not intentionally delete the configuration file.
+`conf/` is created or reused at runtime. Installing with `unzip -o` does not delete settings.
 
-## Updating
-
-Back up settings if desired:
+## Back up settings
 
 ```bash
-ssh trimui 'cp -a /userdata/roms/ports/brkchrd/conf /userdata/system/brkchrd-conf-backup'
+ssh trimui '
+  rm -rf /userdata/system/brkchrd-conf-backup &&
+  cp -a /userdata/roms/ports/brkchrd/conf \
+    /userdata/system/brkchrd-conf-backup
+'
 ```
 
-Then install the new ZIP over the existing directory. The configuration format is text and unknown keys are ignored.
+## Startup and input log
+
+View it remotely:
+
+```bash
+ssh trimui 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
+```
+
+Copy it to a Mac:
+
+```bash
+scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.log \
+  ~/Downloads/brkchrd-v030.log
+```
+
+Version 0.3 logs the SDL mapping and the first raw button/axis events. This is especially useful when testing another Knulli release.
 
 ## Uninstall
 
