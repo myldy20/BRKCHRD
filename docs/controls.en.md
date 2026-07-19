@@ -1,80 +1,109 @@
 # Controls — English
 
-## The performance model
+## The actual TrimUI Brick layout
 
-BRKCHRD separates actions into two layers:
+BRKCHRD 0.3 follows the signals that Knulli really exposes on TrimUI Brick instead of pretending the device is a generic Xbox controller:
 
-1. **PLAY performance:** D-pad arms or temporarily changes chord colour. It never transposes the instrument.
-2. **Editing pages:** D-pad selects and edits sound, effects and system parameters.
+- the two glowing front buttons arrive as left and right shoulder controls;
+- rear L1 and L2 share one left-side channel;
+- rear R1 and R2 share one right-side channel;
+- SDL face-button names are swapped relative to the letters printed on the Brick.
 
-A/B/X/Y remain playable on every page, so sound editing does not silence the instrument.
+The application handles these differences directly.
 
-## Face buttons and banks
+## Main controls
 
-| Button | Core | Hold rear L | Hold rear R |
-| --- | --- | --- | --- |
-| A | I | ii | i |
-| B | V | iii | iv |
-| X | vi | vii° | ♭VI |
-| Y | IV | ♭VII | ♭III |
+| Physical control | Action |
+| --- | --- |
+| glowing front button, left | octave down |
+| glowing front button, right | octave up |
+| either rear left button: L1 or L2 | next left-panel mode |
+| either rear right button: R1 or R2 | next right-panel mode |
+| Start | next PAD / STRUM / ARP / PULSE mode |
+| short Select press | latch on/off |
+| hold Select | disable latch and stop every note immediately |
+| Start + Select | save settings and exit |
 
-Rear L/R have dual behaviour:
+The last rear side pressed becomes focused. Its panel receives a bright double outline and the D-pad controls that panel.
 
-- **hold with a chord:** alternate chord bank;
-- **short tap without a chord:** previous/next page.
+## Left panel
 
-The page action is cancelled as soon as a face button is pressed, so preparing an alternate chord does not unexpectedly leave PLAY.
+Rear L1/L2 cycle through:
+
+1. **CLASSIC** — standard chord colours;
+2. **EXTENDED** — extended, jazz and modal colours;
+3. **DARK** — power, open, cluster, tritone and other heavy variants;
+4. **SOUND** — synthesis engine and macro parameters;
+5. **SYSTEM** — key, octave display and interface-motion level.
+
+In CLASSIC / EXTENDED / DARK, the D-pad selects a cell in the equal 3×3 colour grid. Press the armed direction again to return to BASE. While a chord is held, the D-pad temporarily changes its colour; releasing the D-pad returns to the armed colour.
+
+In SOUND and SYSTEM:
+
+- D-pad Up/Down selects a row;
+- D-pad Left/Right edits the value;
+- held Left/Right accelerates.
+
+## Right panel
+
+Rear R1/R2 cycle through:
+
+1. **CORE** — main chord bank;
+2. **DIATONIC+** — additional diatonic degrees;
+3. **BORROWED** — borrowed minor and modal degrees;
+4. **FX 1** — first effect slot;
+5. **FX 2** — second effect slot;
+6. **MASTER** — master level and signal path.
+
+Entering CORE / DIATONIC+ / BORROWED makes that bank active. It remains active while effects are being edited.
+
+In FX 1 and FX 2:
+
+- Up/Down selects TYPE, AMOUNT or COLOUR;
+- Left/Right edits the selected value.
+
+In MASTER, Left/Right adjusts master level.
+
+## Physical ABXY chord layout
+
+The interface now shows the letters printed on the Brick rather than SDL's logical button names.
+
+| Physical position | Button | CORE | DIATONIC+ | BORROWED |
+| --- | --- | --- | --- | --- |
+| bottom | B | I | ii | i |
+| right | A | V | iii | iv |
+| left | Y | vi | vii° | ♭VI |
+| top | X | IV | ♭VII | ♭III |
+
+ABXY remain playable in every left- and right-panel mode, so sound and effect edits can be auditioned immediately.
 
 ## Chord colours
 
-On PLAY, tap a D-pad direction to arm it. The armed colour is used by the next chord. Tap the same direction again to return to BASE.
-
-While a chord is held, D-pad movement updates the chord immediately. Releasing the D-pad returns to the armed colour, not necessarily BASE.
-
 ### CLASSIC
 
-| Direction | Colour |
-| --- | --- |
-| Up | flip major/minor |
-| Up-right | dominant/minor 7 |
-| Right | major/minor 7 |
-| Down-right | add9/minor 9 |
-| Down | sus4 |
-| Down-left | sixth/sus2 |
-| Left | dark minor/diminished |
-| Up-left | augmented |
+Up — major/minor flip; Up-right — dominant/minor 7; Right — maj7/min7; Down-right — add9/min9; Down — sus4; Down-left — 6/sus2; Left — dark/dim; Up-left — augmented.
 
-### EXTENDED — glowing FX1
+### EXTENDED
 
 ADD11, DOM9, 6/9, MIN11, 7SUS, HALF-DIM, mMAJ7 and LYDIAN.
 
-### DARK — glowing FX2
+### DARK
 
 POWER, CRUNCH 7#9, QUARTAL, CLUSTER add♭9, OPEN no-third, MIN6, TRITONE and AUGMAJ7.
 
-Press FX1 and FX2 together to return to CLASSIC + BASE.
+## Desktop mapping
 
-## Global controls
-
-| Control | Action |
+| Keyboard | TrimUI Brick |
 | --- | --- |
-| Start | next PAD / STRUM / ARP / PULSE mode |
-| Select | latch on/off |
-| Start + Select | save and exit |
-| rear L/R tap | previous/next page |
-| D-pad Up/Down | select row outside PLAY |
-| D-pad Left/Right | edit selected value outside PLAY |
-
-Held Left/Right editing accelerates after approximately 0.85 seconds and again after 2.2 seconds.
-
-## Desktop test mapping
-
-| Keyboard | Handheld |
-| --- | --- |
-| Z / X / A / S | A / B / X / Y |
+| Z / X / A / S | bottom B / right A / left Y / top X |
 | arrows | D-pad |
-| Q / W | rear L / R |
-| E / R | glowing FX1 / FX2 |
+| Q | next left-panel mode |
+| W | next right-panel mode |
+| E / R | octave down / up |
 | Enter | Start |
 | Space | Select |
 | Esc | exit |
+
+## Input diagnostics
+
+At startup, the application writes the controller name, SDL mapping, controller-button events and the first raw button/axis events to `brkchrd.log`. This makes firmware-specific mapping differences diagnosable without guessing from labels.
