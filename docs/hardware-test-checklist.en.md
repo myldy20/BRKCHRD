@@ -1,92 +1,184 @@
-# BRKCHRD 0.2 hardware test checklist
+# BRKCHRD 0.3 hardware test checklist
 
-This checklist is intended for real-device validation on a TrimUI Brick running Knulli. It complements the automated Linux and AArch64 tests: CI can prove that the program builds, starts and packages correctly, but only the handheld can confirm controller mapping, latency, screen readability and audio stability.
+This checklist is for a physical TrimUI Brick running Knulli. Automated tests verify compilation, startup and packaging; the handheld must still validate layout, real controller mapping, latency, sound balance and thermal behaviour.
 
 ## 1. Installation and launch
 
-- Extract the PortMaster archive into `/userdata/roms/ports/`.
-- Confirm that these files exist:
+- Install `brkchrd-v0.3.0-portmaster.zip` into `/userdata/roms/ports/`.
+- Confirm:
   - `/userdata/roms/ports/BRKCHRD.sh`
   - `/userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64`
-- Confirm that both files are executable.
+- Confirm both are executable.
 - Refresh the game list or reboot.
-- Launch **Ports → BRKCHRD**.
-- Confirm that the application reaches the PLAY page without returning to the frontend.
-- Confirm that the first audible chord does not require opening a settings screen.
+- Open **Ports → BRKCHRD**.
+- Confirm the application reaches the dual-panel performance screen.
+- Confirm a chord can be played immediately without opening an editor.
 
-## 2. Display and layout
+## 2. Fixed layout and typography
 
-Inspect every page: PLAY, SOUND, FX and SYSTEM.
+Inspect every left mode: CLASSIC, EXTENDED, DARK, SOUND and SYSTEM.
 
-- No text overlaps another label, value, panel border or footer.
-- Long engine and effect names remain inside their assigned fields.
-- The active page, active row and current value are visually obvious.
-- The selected chord and armed D-pad colour are readable from normal handheld distance.
-- The 512×384 logical layout scales cleanly to the Brick's 1024×768 display.
-- The bottom help line changes with the current page and does not cover content.
-- Rapid page changes do not leave stale text or visual fragments.
+Inspect every right mode: CORE, DIATONIC+, BORROWED, FX 1, FX 2 and MASTER.
 
-Record the page name and exact labels if any overlap remains.
+Confirm:
 
-## 3. Face buttons and chord banks
+- the two main panels have equal width and height;
+- all nine colour cells are equal;
+- all four chord buttons are equal;
+- no label crosses a cell, panel, footer or meter;
+- long engine and effect names remain clipped inside their fields;
+- large chord text remains prominent;
+- microtext is compact rather than loosely tracked;
+- the focused side has a clearly visible double outline;
+- footer text remains inside the footer;
+- no stale pixels remain after rapid mode changes;
+- 512×384 scales cleanly to the Brick's 1024×768 display.
 
-Test A, B, X and Y on every page.
+Photograph any overlap and record both active panel modes.
 
-- Each face button starts a chord immediately.
-- Releasing the button releases the chord when latch is off.
-- Holding L while pressing a face button selects the secondary diatonic bank.
-- Holding R while pressing a face button selects the borrowed bank.
-- Fast changes between face buttons do not leave stuck notes.
-- Voice leading avoids unnecessary octave jumps between common progressions.
+## 3. Physical face-button translation
 
-Suggested progression tests:
+The screen must match the labels printed on the Brick:
 
-- A → B → X → Y
-- A → Y → B → A
-- L+A → L+B → A
-- R+A → R+B → Y
+```text
+        X
+    Y       A
+        B
+```
 
-## 4. D-pad colour workflow
+In CORE, confirm:
 
-On the PLAY page, the D-pad must control chord colour only. It must not change key or octave.
+- physical bottom B plays I;
+- physical right A plays V;
+- physical left Y plays vi;
+- physical top X plays IV.
 
-- Press Up with no chord held, then press A: the first chord uses the armed colour.
-- Repeat for all eight directions, including diagonals.
-- Press the same direction again: colour returns to BASE.
-- Arm POWER and verify that it can be the first chord played.
-- Hold a chord and change direction: the sounding chord updates without a stuck previous chord.
-- The armed direction remains visible after releasing the chord.
-- Key and octave remain unchanged during all PLAY-page D-pad tests.
+Repeat in DIATONIC+ and BORROWED. Pressing a button must highlight the matching physical screen position, not merely the SDL semantic name.
 
-## 5. Glowing FX buttons
+Test rapid progressions:
 
-Knulli may expose the glowing face-panel FX buttons as L3/R3 buttons or as trigger axes. BRKCHRD accepts both representations.
+- B → A → Y → X;
+- B → X → A → B;
+- change bank, then repeat the same physical pattern.
 
-- FX1 selects the EXTENDED colour palette.
-- FX2 selects the DARK colour palette.
-- FX1 + FX2 returns to CLASSIC and BASE.
-- The on-screen palette indicator follows the physical buttons.
-- The buttons work both before and during a held chord.
-- No unrelated rear button is required for this function.
+No stuck notes or unexpected octave jumps should remain.
 
-If a button does not respond, record which physical button was pressed and attach the controller log described below.
+## 4. Glowing front octave buttons
 
-## 6. Page navigation and performance controls
+- glowing front-left lowers octave by one;
+- glowing front-right raises octave by one;
+- range stops safely at −2 and +2;
+- the header and SYSTEM octave row update immediately;
+- a held chord revoices immediately without leaving old notes;
+- the front buttons do not change chord bank, palette or panel mode.
 
-With no chord held:
+## 5. Rear left channel
 
-- Tap L to move to the previous page.
-- Tap R to move to the next page.
-- Holding L or R for a chord bank must not accidentally change page.
-- Start cycles PAD, STRUM, ARP and PULSE.
-- Select toggles latch.
-- Start + Select saves settings and exits cleanly.
+Press both physical L1 and L2 separately. Each must advance exactly one left-panel mode:
 
-After restarting, confirm that key, octave, engine parameters, effects, palette, armed direction, BPM, play mode and latch state were restored as documented.
+```text
+CLASSIC → EXTENDED → DARK → SOUND → SYSTEM → CLASSIC
+```
 
-## 7. Sound engines
+Confirm:
 
-Test all ten engines with the same chord and with effects temporarily disabled:
+- L1 and L2 produce the same result;
+- one physical press never skips two modes;
+- the left panel receives the focus outline;
+- D-pad editing applies to the left panel after the press;
+- no right-panel state changes.
+
+## 6. Rear right channel
+
+Press both physical R1 and R2 separately. Each must advance exactly one right-panel mode:
+
+```text
+CORE → DIATONIC+ → BORROWED → FX 1 → FX 2 → MASTER → CORE
+```
+
+Confirm:
+
+- R1 and R2 produce the same result;
+- one press never skips two modes;
+- CORE / DIATONIC+ / BORROWED immediately become the active bank;
+- entering FX or MASTER preserves the last selected bank;
+- the right panel receives D-pad focus;
+- no left-panel state changes.
+
+## 7. D-pad colour workflow
+
+With CLASSIC, EXTENDED or DARK visible—or while a chord-bank view is focused:
+
+- arm all eight directions, including diagonals;
+- press the armed direction again and confirm BASE returns;
+- arm POWER before the first chord and confirm the first chord is a power chord;
+- hold a chord and move the D-pad: the sounding chord changes temporarily;
+- release the direction: the armed colour returns;
+- key and octave must not change.
+
+## 8. SOUND and SYSTEM editing
+
+In SOUND:
+
+- Up/Down selects ENGINE, TONE, BODY, MOTION, ATTACK, RELEASE, SPREAD, BPM and PLAY MODE;
+- Left/Right edits the selected row;
+- held Left/Right accelerates;
+- ABXY continue to play during editing.
+
+In SYSTEM:
+
+- KEY changes correctly;
+- OCTAVE is status-only and follows the front buttons;
+- UI MOTION cycles OFF / LOW / FULL;
+- VERSION shows 0.3.0;
+- there are no unexplained RESET COLOUR or PANIC rows.
+
+## 9. FX and MASTER editing
+
+For both FX slots:
+
+- Up/Down selects TYPE, AMOUNT and COLOUR;
+- Left/Right edits immediately;
+- the response curve changes visibly;
+- Off is effectively dry;
+- no type change creates a burst or stuck voice.
+
+In MASTER:
+
+- Left/Right adjusts final level;
+- the signal path remains readable;
+- the output meter follows actual sound.
+
+Test Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb, first separately and then in series.
+
+## 10. Reactive interface
+
+At UI MOTION FULL, confirm:
+
+- background depth moves smoothly without distracting flicker;
+- active chord buttons pulse;
+- the output meter reacts to dynamics;
+- FX curves move with effect state;
+- current chord and play mode update immediately.
+
+Compare FULL, LOW and OFF. Audio timing and sound must remain unchanged.
+
+## 11. Select, latch and emergency stop
+
+- short Select toggles latch once;
+- with latch on, a released chord continues;
+- hold Select for about 0.85 seconds;
+- `ALL NOTES OFF` appears;
+- latch turns off;
+- every voice stops;
+- no held face-button state remains;
+- releasing Select after the long press must not toggle latch back on.
+
+Start must cycle PAD, STRUM, ARP and PULSE. Start + Select must save and exit cleanly.
+
+## 12. Sound engines and effects
+
+With both effects Off, compare all ten engines using the same chord and octave:
 
 1. Velvet Poly
 2. Dust Piano
@@ -99,82 +191,31 @@ Test all ten engines with the same chord and with effects temporarily disabled:
 9. Smoke Reed
 10. Sub Altar
 
-For each engine, check:
+For each engine, note attack, spectral identity, useful macro ranges, low/high balance and any redundant or unpleasant region.
 
-- It has a clearly different attack, spectrum or movement from adjacent engines.
-- Tone, Body and Motion produce useful changes across most of their range.
-- Attack and Release reach both short and sustained settings without clicks.
-- Spread creates width without obvious phase cancellation on the built-in speaker.
-- Low notes remain controlled and do not produce permanent limiter pumping.
-- High notes do not become painfully loud compared with low notes.
+Then enable effects and check tails, level jumps, crackles and stereo behaviour on both speaker and headphones.
 
-Note the engine and parameter values for any weak, redundant or unpleasant range.
+## 13. Latency, stability and thermal behaviour
 
-## 8. Effects
+- estimate button-to-sound latency with headphones;
+- play repeated short chords in PAD and STRUM;
+- run ARP and PULSE for at least five minutes;
+- edit sound and effects during sustained playback;
+- run continuously for at least 15 minutes;
+- watch for underruns, clicks, stuck notes, rising latency, UI slowdown, memory growth and unusual heat;
+- test Knulli suspend/resume if practical;
+- confirm exit stops audio and returns control to Knulli.
 
-Test FX1 and FX2 separately, then in series.
+## 14. Logs and bug report
 
-Available algorithms:
-
-- Off
-- Chorus
-- Phaser
-- Tremolo
-- Drive
-- Crusher
-- Delay
-- Reverb
-
-For each slot:
-
-- Type changes immediately without a burst or stuck tail.
-- Amount moves from effectively dry to clearly audible.
-- Colour changes a meaningful algorithm-specific parameter.
-- Delay repeats follow BPM changes.
-- Reverb and delay tails remain audible after chord release.
-- Drive and Crusher do not create uncontrolled DC offset or extreme volume jumps.
-- Two active effects do not cause persistent crackling or UI lag.
-
-## 9. Audio latency and stability
-
-Use headphones if possible and also test the built-in speaker.
-
-- Note the perceived delay between button press and sound.
-- Play repeated short chords in PAD and STRUM modes.
-- Hold six-note extended chords while switching pages.
-- Run ARP and PULSE for at least five minutes.
-- Change engine and effects during sustained playback.
-- Listen for underruns, crackles, periodic gaps, stuck notes and sudden level jumps.
-- Confirm that exiting stops audio and returns control to Knulli.
-
-Record whether problems occur on speaker, headphones or both.
-
-## 10. Performance and thermal check
-
-Run BRKCHRD continuously for at least 15 minutes.
-
-- UI remains responsive.
-- No increasing audio latency appears over time.
-- Memory use does not grow continuously.
-- The device does not become unusually hot.
-- Battery drain is reasonable for an active audio application.
-- Returning from Knulli suspend does not leave BRKCHRD or audio in a broken state.
-
-## 11. Logs to collect
-
-Primary runtime log:
+Collect:
 
 ```text
 /userdata/roms/ports/brkchrd/conf/brkchrd.log
-```
-
-Saved settings:
-
-```text
 /userdata/roms/ports/brkchrd/conf/brkchrd.cfg
 ```
 
-Useful commands:
+Commands:
 
 ```bash
 ssh trimui 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
@@ -182,24 +223,23 @@ scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.log ~/Downloads/
 scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.cfg ~/Downloads/
 ```
 
-For a controller-mapping problem, also run the controller diagnostic described in the troubleshooting guide and include its complete output.
-
-## 12. Recommended bug report format
+Recommended report:
 
 ```text
 BRKCHRD version:
 Knulli version:
-Page:
+Left-panel mode:
+Right-panel mode:
+Focused side:
 Physical control:
 Expected result:
 Actual result:
 Reproduction steps:
-Does it happen every time:
 Speaker / headphones:
-Relevant engine and parameter values:
-Relevant FX settings:
-Attached log files:
+Engine and parameters:
+FX settings:
+Attached log:
 Photo or video:
 ```
 
-One reproducible problem per report is preferable to a long mixed list. Include a short video for controller or layout issues whenever possible.
+Prefer one reproducible issue per report. A short video is particularly useful for controller and animation problems.
