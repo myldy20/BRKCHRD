@@ -5,8 +5,8 @@
   "items_opt": null,
   "attr": {
     "title": "BRKCHRD",
-    "desc": "Open chord-performance synth with functional harmony, ten synthesis engines and editable effects.",
-    "inst": "Verified build target: TrimUI Brick with Knulli/PortMaster. Configuration and logs are stored under brkchrd/conf.",
+    "desc": "Brick-native chord-performance synth with dual-panel control, functional harmony, ten synthesis engines and editable effects.",
+    "inst": "Verified build target: TrimUI Brick with Knulli/PortMaster. Front buttons control octave; rear left/right channels cycle the matching screen panel. Configuration and logs are stored under brkchrd/conf.",
     "genres": ["music"],
     "porter": ["myldy20"],
     "image": {},
