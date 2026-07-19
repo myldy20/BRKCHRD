@@ -3,8 +3,8 @@
   <game>
     <path>./BRKCHRD.sh</path>
     <name>BRKCHRD</name>
-    <desc>Chord-performance synthesizer with functional harmony, voice leading, ten engines and two effect slots.</desc>
-    <releasedate>20260719T000000</releasedate>
+    <desc>Brick-native dual-panel chord instrument with functional harmony, voice leading, ten engines and two effect slots.</desc>
+    <releasedate>20260720T000000</releasedate>
     <developer>Myldy design</developer>
     <publisher>Myldy design</publisher>
     <genre>Music</genre>
