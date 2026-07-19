@@ -1,0 +1,63 @@
+name: apply-v030-ui
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/apply-v030-ui.yml'
+      - 'tools/v030parts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/brkchrd-alpha'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-alpha
+          fetch-depth: 0
+      - name: Decode and verify UI source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/v030parts/part-* | base64 --decode > /tmp/sdl-main-v030.cpp.gz
+          echo 'f1ec2f92fc3be83aa0a376b8ca28f3b0b692d1cbea3b94791f69b69b19945ad7  /tmp/sdl-main-v030.cpp.gz' | sha256sum --check
+          gzip -dc /tmp/sdl-main-v030.cpp.gz > /tmp/sdl_main.cpp
+          grep -q 'constexpr const char\* kVersion = "0.3.0"' /tmp/sdl_main.cpp
+          grep -q 'FRONT: OCT - / +' /tmp/sdl_main.cpp
+      - name: Apply source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/sdl_main.cpp src/sdl_main.cpp
+          rm -rf tools/v030parts
+      - name: Build and validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libsdl2-dev
+          cmake -S . -B build-v030 -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-v030 --parallel 2
+          ctest --test-dir build-v030 --output-on-failure
+          set +e
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build-v030/brkchrd-sdl
+          status=$?
+          set -e
+          test "$status" -eq 0 -o "$status" -eq 124
+          rm -rf build-v030
+      - name: Commit validated UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add src/sdl_main.cpp tools/v030parts
+          git diff --cached --check
+          git commit -m 'BRKCHRD 0.3 Brick-native dual-panel interface'
+          git push origin HEAD:agent/brkchrd-alpha
