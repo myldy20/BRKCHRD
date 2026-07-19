@@ -29,3 +29,4 @@ jobs:
           git fetch origin main
           git merge --no-edit origin/main
           git push origin HEAD:agent/brkchrd-alpha
+      # Triggered after the workflow became available on the base branch.
