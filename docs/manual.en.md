@@ -1,56 +1,170 @@
-# BRKCHRD 0.2.0 manual — English
+# BRKCHRD 0.3.0 manual — English
 
-## Purpose
+## What the instrument is
 
-BRKCHRD is a performance instrument, not a chord encyclopaedia menu. The main workflow is: choose a functional chord, arm a colour, optionally hold an alternate bank, and play. Harmony remains transposable because buttons represent scale functions rather than fixed notes.
+BRKCHRD is not a chord encyclopaedia or a tracker. It is a live harmony instrument for TrimUI Brick. Four face buttons select functional chords, the D-pad colours them, and two independent screen halves expose harmony, synthesis and effects without interrupting performance.
 
 ## First minute
 
-1. Open PLAY.
-2. Press A, B, X and Y to hear I, V, vi and IV.
-3. Tap FX2 to choose DARK.
-4. Tap D-pad Up to arm POWER.
-5. Play any face button: it starts as a power chord immediately.
-6. Tap Up again to return to BASE.
-7. Tap rear R to open SOUND, select a row with Up/Down and edit it with Left/Right.
-8. Tap rear R again for FX.
-9. Start changes play mode; Select toggles latch.
+1. Launch BRKCHRD. The left panel starts in CLASSIC and the right panel in CORE.
+2. Press the physical B, A, Y and X buttons. In CORE they play I, V, vi and IV.
+3. Press either rear L button twice: the left panel moves CLASSIC → EXTENDED → DARK.
+4. Press D-pad Up. POWER is now armed in DARK.
+5. Play any chord: it begins as a power chord immediately.
+6. Press Up again to return to BASE.
+7. The glowing front-left button lowers the octave; the glowing front-right button raises it.
+8. Either rear R button cycles the right panel through chord banks, FX 1, FX 2 and MASTER.
+9. Start changes PAD / STRUM / ARP / PULSE. A short Select press toggles latch.
 
-## Pages
+## Two independent panels
 
-### PLAY
+The interface always contains two equal panels. The last rear side pressed receives a bright double outline and D-pad focus.
 
-The left panel shows the current chord-colour wheel. The right panel shows the active chord bank and face-button diamond. The bottom strip shows the sounding chord and the most important performance hints.
+### Left panel
 
-### SOUND
+Rear L1 and L2 share the same left-side signal and cycle through:
 
-Factory preset plus Tone, Body, Motion, Attack, Release, Spread, BPM and Play Mode. Selecting another preset replaces the whole sound state; edit macros after selecting the desired base preset.
+- CLASSIC;
+- EXTENDED;
+- DARK;
+- SOUND;
+- SYSTEM.
 
-### FX
+CLASSIC, EXTENDED and DARK define eight directional colours plus BASE. SOUND opens the engine and synthesis macros. SYSTEM contains key, octave status and interface motion.
 
-Two serial slots. Type selects the algorithm, Amount controls depth and Colour controls the algorithm's second dimension. Master is after both slots.
+### Right panel
 
-### SYSTEM
+Rear R1 and R2 share the same right-side signal and cycle through:
 
-Key and octave live here deliberately. RESET COLOUR returns CLASSIC + BASE. PANIC clears all voices. ABOUT shows the product version and hardware-input notes.
+- CORE;
+- DIATONIC+;
+- BORROWED;
+- FX 1;
+- FX 2;
+- MASTER.
 
-## Latch behaviour
+Entering one of the first three sections selects that bank. The selected bank remains active while effects are edited.
 
-With latch off, releasing the last face button releases the chord. With latch on, the chord remains until another chord replaces it or PANIC is used. ARP and PULSE keep using the latched note set.
+## Chord buttons
+
+The Brick cap layout is:
+
+```text
+        X
+    Y       A
+        B
+```
+
+The core bank is:
+
+```text
+        X = IV
+    Y = vi    A = V
+        B = I
+```
+
+The interface deliberately shows the physical Brick letters rather than SDL's logical names, which Knulli swaps in pairs.
+
+## Chord colour
+
+In any colour mode or chord-bank view, the D-pad can arm a colour before the next chord. Press the same direction again to return to BASE.
+
+While a chord is held, D-pad movement changes its colour immediately and temporarily. Releasing the direction returns to the armed colour.
+
+### CLASSIC
+
+Standard minor/major flip, sevenths, add9, sus, sixth, diminished and augmented variants.
+
+### EXTENDED
+
+ADD11, DOM9, 6/9, MIN11, 7SUS, HALF-DIM, mMAJ7 and LYDIAN.
+
+### DARK
+
+POWER, CRUNCH 7#9, QUARTAL, CLUSTER, OPEN, MIN6, TRITONE and AUGMAJ7.
+
+## SOUND
+
+Rows:
+
+- ENGINE;
+- TONE;
+- BODY;
+- MOTION;
+- ATTACK;
+- RELEASE;
+- SPREAD;
+- BPM;
+- PLAY MODE.
+
+Up/Down selects a row and Left/Right edits it. Holding Left/Right accelerates. ABXY remain playable, so every change can be auditioned immediately.
+
+## FX 1 and FX 2
+
+Each serial effect slot exposes:
+
+- TYPE — algorithm;
+- AMOUNT — depth;
+- COLOUR — algorithm-specific second dimension.
+
+Available algorithms: Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb.
+
+## MASTER
+
+MASTER controls final level after both effects and visualises:
+
+```text
+SYNTH → FX 1 → FX 2 → MASTER
+```
+
+## SYSTEM
+
+- KEY — tonal centre;
+- OCTAVE — current shift, changed by the glowing front controls;
+- UI MOTION — OFF / LOW / FULL;
+- VERSION — application version.
+
+RESET COLOUR and PANIC menu rows no longer exist. BASE is restored by tapping the armed D-pad direction again. Hold Select for an emergency stop.
+
+## Latch and all-notes-off
+
+A short Select press toggles latch. With latch enabled, the last chord continues after ABXY are released.
+
+Holding Select for approximately 0.85 seconds:
+
+- disables latch;
+- stops every voice;
+- clears held-chord state;
+- displays `ALL NOTES OFF`.
 
 ## Voice leading
 
-Each new chord is inverted and octave-shifted to reduce movement from the previous one. The displayed chord name remains the harmonic identity, while the sounding voicing may not be root position.
+Each new chord is inverted and octave-shifted to reduce movement from the previous voicing. The displayed name is the harmonic identity; the sounding voicing may not be root position.
 
-## Save behaviour
+## Save and exit
 
-Start+Select exits through the normal path and writes `brkchrd.cfg`. Abrupt power loss or forced termination may lose the latest edits. The file is human-readable and can be backed up over SSH.
+Start + Select saves:
+
+- key and octave;
+- current panel modes;
+- bank and palette;
+- armed colour;
+- engine and synthesis macros;
+- both effect slots;
+- BPM, play mode and latch;
+- interface-motion level.
+
+The application then exits normally.
+
+## Diagnostics
+
+`brkchrd.log` includes the controller name, SDL mapping and a limited raw button/axis trace. If another Knulli release changes the layout, the actual codes can be recovered without a separate diagnostic application.
 
 ## Current limitations
 
-- English in-app labels only in 0.2.0; all external documentation is bilingual.
+- in-app labels are English; all external documentation is bilingual;
 - no MIDI input/output yet;
 - no user preset slots yet;
-- no per-effect tempo subdivision selector;
-- controller aliases cover the two Brick mappings already observed, but other firmwares remain unverified;
-- final speaker voicing and CPU limits require physical testing.
+- no per-effect delay subdivision selector;
+- other handhelds and firmwares remain unverified;
+- final speaker voicing, latency and CPU limits require physical testing.
