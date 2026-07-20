@@ -1,4 +1,4 @@
-# BRKCHRD 0.5.1 — PortMaster / Knulli
+# BRKCHRD 0.5.2 — PortMaster / Knulli
 
 Extract the release archive into the PortMaster ports directory. The package includes `screenshot.jpg`, `cover.jpg`, the native AArch64 executable, complete GPLv3 and attribution notices, and full English/Russian documentation under `brkchrd/docs/`.
 
@@ -26,7 +26,7 @@ brkchrd/conf/brkchrd.log
 
 ---
 
-# BRKCHRD 0.5.1 — PortMaster / Knulli
+# BRKCHRD 0.5.2 — PortMaster / Knulli
 
 Распакуйте релизный архив в каталог портов PortMaster. В пакет входят `screenshot.jpg`, `cover.jpg`, нативный AArch64-бинарник, полный текст GPLv3, уведомление об исходном проекте и подробная документация на русском и английском в `brkchrd/docs/`.
 
