@@ -19,11 +19,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libsdl2-dev
-      - name: Configure
+      - name: Configure Release
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --parallel 2
-      - name: Test chord construction and voicing
+      - name: Run executable chord, config, input and DSP checks
         run: ctest --test-dir build --output-on-failure
       - name: SDL startup smoke test in English
         run: |
@@ -63,6 +63,24 @@ jobs:
         with:
           name: brkchrd-v052-audio-demo
           path: brkchrd-v052-demo.wav
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Debug with ASan and UBSan
+        run: >-
+          cmake -S . -B build-sanitized
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBRKCHRD_BUILD_SDL=OFF
+          -DBRKCHRD_ENABLE_SANITIZERS=ON
+      - name: Build sanitized core and tests
+        run: cmake --build build-sanitized --parallel 2
+      - name: Run sanitized checks
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build-sanitized --output-on-failure
 
   aarch64-packages:
     runs-on: ubuntu-24.04-arm
