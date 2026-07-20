@@ -1,19 +1,19 @@
 diff --git a/src/sdl_main.cpp b/src/sdl_main.cpp
 --- a/src/sdl_main.cpp
 +++ b/src/sdl_main.cpp
-@@ -26,7 +26,7 @@ namespace {
+@@ -26,4 +26,4 @@ namespace {
  constexpr int kHeight = 384;
  constexpr int kRate = 48000;
  constexpr int kFrames = 512;
 -constexpr const char* kVersion = "0.5.0";
 +constexpr const char* kVersion = "0.5.1";
-@@ -83,6 +83,7 @@ std::array<std::uint8_t, 7> glyph(char value) {
+@@ -82,4 +82,5 @@ std::array<std::uint8_t, 7> glyph(char value) {
      case '<': return {0x02,0x04,0x08,0x10,0x08,0x04,0x02}; case '>': return {0x08,0x04,0x02,0x01,0x02,0x04,0x08};
      case '[': return {0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; case ']': return {0x0E,0x02,0x02,0x02,0x02,0x02,0x0E};
      case '@': return {0x0E,0x11,0x17,0x15,0x17,0x10,0x0E};
 +    case '&': return {0x0C,0x12,0x14,0x08,0x15,0x12,0x0D};
      case '%': return {0x19,0x19,0x02,0x04,0x08,0x13,0x13}; case '=': return {0x00,0x1F,0x00,0x1F,0x00,0x00,0x00};
-@@ -115,6 +116,9 @@ void text(SDL_Renderer* r, int x, int y, std::string_view value, int scale, Colo
+@@ -114,6 +115,9 @@ void text(SDL_Renderer* r, int x, int y, std::string_view value, int scale, Colo
          cursor += 5 * scale + tracking;
      }
  }
@@ -23,7 +23,7 @@ diff --git a/src/sdl_main.cpp b/src/sdl_main.cpp
  void micro(SDL_Renderer* r, int x, int y, std::string_view value, Colour c, bool centered = false) {
      text(r, x, y, value, 1, c, centered, 0);
  }
-@@ -349,13 +353,22 @@ void draw_chord_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
+@@ -349,11 +353,19 @@ void draw_chord_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
      micro(r, x + w / 2, y + h - 18, fit(selected, 43), kInk, true);
  }
  
@@ -45,7 +45,7 @@ diff --git a/src/sdl_main.cpp b/src/sdl_main.cpp
 +    text_right(r, x + w - 14, y + 7, fit(value, 17), 1, active ? kBg : kDim, 0);
 +    if (amount >= 0.0F) bar(r, x + 9, y + 25, w - 18, amount, active ? kWhite : accent);
  }
-@@ -371,11 +384,17 @@ void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& u
+@@ -371,9 +383,14 @@ void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& u
      const int row = ui.sound_row[static_cast<std::size_t>(layer)];
      if (layer == 0) {
          const auto info = synth.preset_info();
@@ -64,7 +64,7 @@ diff --git a/src/sdl_main.cpp b/src/sdl_main.cpp
 +                          i + 1 == row, kOrange, bars[static_cast<std::size_t>(i)]);
 +        }
          micro(r, x + 12, y + h - 19, fit(info.character, 42), kDim);
-@@ -483,9 +502,9 @@ void draw_settings(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
+@@ -483,8 +500,8 @@ void draw_settings(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
          rect(r, 28, 78 + i * 38, 456, 31, active ? kBlue : kPanel2);
          outline(r, 28, 78 + i * 38, 456, 31, active ? kWhite : alpha(kBlue, 100));
          text(r, 40, 88 + i * 38, settings_name(row), 1, active ? kBg : kInk, false, 0);
@@ -78,7 +78,7 @@ diff --git a/src/sdl_main.cpp b/src/sdl_main.cpp
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -1,5 +1,5 @@
+@@ -1,4 +1,4 @@
  cmake_minimum_required(VERSION 3.16)
 -project(brkchrd VERSION 0.5.0 LANGUAGES CXX)
 +project(brkchrd VERSION 0.5.1 LANGUAGES CXX)
@@ -87,7 +87,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 diff --git a/tools/render_demo.cpp b/tools/render_demo.cpp
 --- a/tools/render_demo.cpp
 +++ b/tools/render_demo.cpp
-@@ -8,7 +8,7 @@
+@@ -9,4 +9,4 @@
  
  int main(int argc, char** argv) {
 -    const std::string path = argc > 1 ? argv[1] : "brkchrd-v050-demo.wav";
@@ -96,10 +96,11 @@ diff --git a/tools/render_demo.cpp b/tools/render_demo.cpp
 diff --git a/tools/package_portmaster.sh b/tools/package_portmaster.sh
 --- a/tools/package_portmaster.sh
 +++ b/tools/package_portmaster.sh
-@@ -25,6 +25,9 @@ cp "$ASSETS/BRKCHRD.sh" "$PACKAGE/BRKCHRD.sh"
+@@ -23,11 +23,15 @@
  cp "$ASSETS/port.json" "$PACKAGE/port.json"
  cp "$ASSETS/gameinfo.xml" "$PACKAGE/gameinfo.xml"
  cp "$ASSETS/README.md" "$PACKAGE/README.md"
+ cp "$ASSETS/BRKCHRD.sh" "$PACKAGE/BRKCHRD.sh"
 +cp "$ASSETS/screenshot.jpg" "$PACKAGE/screenshot.jpg"
 +cp "$ASSETS/cover.jpg" "$PACKAGE/cover.jpg"
 +cp "$ASSETS/cover.jpg" "$PACKAGE/brkchrd/cover.jpg"
@@ -108,9 +109,7 @@ diff --git a/tools/package_portmaster.sh b/tools/package_portmaster.sh
  cp "$ROOT_DIR/LICENSE" "$PACKAGE/brkchrd/licenses/GPL-3.0.txt"
 +cp "$ROOT_DIR/NOTICE.md" "$PACKAGE/brkchrd/licenses/NOTICE.md"
  cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$PACKAGE/brkchrd/licenses/THIRD_PARTY_NOTICES.md"
-@@ -35,7 +38,7 @@ chmod +x "$PACKAGE/BRKCHRD.sh" "$PACKAGE/brkchrd/brkchrd-sdl.aarch64"
- 
- cd "$STAGE"
--zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.0-portmaster.zip" BRKCHRD.sh port.json gameinfo.xml README.md brkchrd
-+zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.1-portmaster.zip" BRKCHRD.sh port.json gameinfo.xml README.md screenshot.jpg cover.jpg brkchrd
- cd "$ROOT_DIR"
+ chmod +x "$PACKAGE/BRKCHRD.sh" "$PACKAGE/brkchrd/brkchrd-sdl.aarch64"
+-(cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.0-portmaster.zip" .)
++(cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.1-portmaster.zip" .)
+ rm -rf "$STAGE"
