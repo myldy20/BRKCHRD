@@ -1,18 +1,16 @@
-name: apply-v040-workflow
+name: sync-v040-branch
 
 on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'tools/v040source/**'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  apply:
+  sync:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/brkchrd-alpha'
     runs-on: ubuntu-latest
     steps:
@@ -20,36 +18,12 @@ jobs:
         with:
           ref: agent/brkchrd-alpha
           fetch-depth: 0
-      - name: Reconstruct, build, test and publish 0.4 UI
+      - name: Merge current main into product branch
         shell: bash
         run: |
-          set -u
-          test -f tools/v040source/src-00 || exit 0
-          cat tools/v040source/src-* > src/sdl_main.cpp
-          sed -i 's/0x0E}};/0x0E};/' src/sdl_main.cpp
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libsdl2-dev
-          set +e
-          {
-            cmake -S . -B build-v040 -DCMAKE_BUILD_TYPE=Release &&
-            cmake --build build-v040 --parallel 2 &&
-            ctest --test-dir build-v040 --output-on-failure &&
-            sh -c 'SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build-v040/brkchrd-sdl; s=$?; test "$s" -eq 0 -o "$s" -eq 124'
-          } > /tmp/v040-build.log 2>&1
-          status=$?
-          set -e
+          set -euo pipefail
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
-          if [ "$status" -ne 0 ]; then
-            tail -n 160 /tmp/v040-build.log > tools/v040-build.log
-            git add tools/v040-build.log
-            git commit -m 'Record BRKCHRD 0.4 build diagnostics' || true
-            git push origin HEAD:agent/brkchrd-alpha
-            exit "$status"
-          fi
-          if [ -f tools/v040-build.log ]; then git rm tools/v040-build.log; fi
-          git add src/sdl_main.cpp
-          git rm -r tools/v040source
-          if [ -d tools/v040parts ]; then git rm -r tools/v040parts; fi
-          git commit -m 'Rework performance controls for BRKCHRD 0.4'
+          git fetch origin main
+          git merge --no-edit origin/main
           git push origin HEAD:agent/brkchrd-alpha
