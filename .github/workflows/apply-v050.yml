@@ -35,7 +35,7 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             cp /tmp/v050-migration.log "$migration_diag"
-            git add "$migration_diag"
+            git add -f "$migration_diag"
             git commit -m 'Record BRKCHRD 0.5 migration diagnostics'
             git push origin HEAD:agent/brkchrd-alpha
             exit "$status"
@@ -54,7 +54,7 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             tail -n 260 /tmp/v050-build.log > "$build_diag"
-            git add "$build_diag"
+            git add -f "$build_diag"
             git commit -m 'Record BRKCHRD 0.5 build diagnostics'
             git push origin HEAD:agent/brkchrd-alpha
             exit "$status"
