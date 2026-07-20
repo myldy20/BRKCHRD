@@ -1,0 +1,40 @@
+name: apply-v051
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-alpha
+          fetch-depth: 0
+      - name: Apply source patch
+        run: git apply --check tools/v051-ui.patch && git apply tools/v051-ui.patch
+      - name: Render artwork and install GPLv3
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin imagemagick
+          mkdir -p assets/branding packaging/portmaster/brkchrd packaging/nextui/tg5040/.media
+          rsvg-convert -w 1024 -h 1024 assets/branding/brkchrd-logo.svg > /tmp/brkchrd-logo.png
+          convert /tmp/brkchrd-logo.png -quality 92 assets/branding/brkchrd-logo.jpg
+          convert /tmp/brkchrd-logo.png -resize 600x600 -gravity center -background '#111514' -extent 1280x640 -quality 92 assets/branding/brkchrd-banner.jpg
+          convert /tmp/brkchrd-logo.png -resize 440x440 -gravity center -background '#111514' -extent 640x480 -quality 92 packaging/portmaster/brkchrd/screenshot.jpg
+          cp packaging/portmaster/brkchrd/screenshot.jpg packaging/portmaster/brkchrd/cover.jpg
+          convert packaging/portmaster/brkchrd/cover.jpg packaging/nextui/tg5040/.media/BRKCHRD.png
+          cp /usr/share/common-licenses/GPL-3 LICENSE
+      - name: Commit migration
+        run: |
+          set -euo pipefail
+          rm tools/v051-ui.patch
+          git config user.name myldy20
+          git config user.email myldy20@users.noreply.github.com
+          git add -A
+          git commit -m 'Polish BRKCHRD 0.5.1 interface and branding'
+          git push origin HEAD:agent/brkchrd-alpha
