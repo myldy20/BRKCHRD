@@ -22,7 +22,7 @@ jobs:
           ref: agent/brkchrd-alpha
           fetch-depth: 0
       - name: Apply reviewed source patch
-        run: git apply --check tools/v051-ui.patch && git apply tools/v051-ui.patch
+        run: git apply --check --unidiff-zero tools/v051-ui.patch && git apply --unidiff-zero tools/v051-ui.patch
       - name: Render release artwork and install GPLv3
         run: |
           set -euo pipefail
