@@ -40,11 +40,11 @@ replace('''    p.latch = false;
     if (!ui.perf_fx_enabled && ui.dpad_mode == DpadMode::Fx) ui.dpad_mode = DpadMode::Chord;
     synth.set_preset(p.preset); p.preset = synth.preset_index();
 ''')
-replace('''        << "defaultpalette " << ui.default_palette << '\n' << "l1palette " << ui.l1_palette << '\n'
-''', '''        << "defaultpalette " << ui.default_palette << '\n' << "l2palette " << ui.l1_palette << '\n'
+replace(r'''        << "defaultpalette " << ui.default_palette << '\n' << "l1palette " << ui.l1_palette << '\n'
+''', r'''        << "defaultpalette " << ui.default_palette << '\n' << "l2palette " << ui.l1_palette << '\n'
 ''')
-replace('''        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n' << "uimotion " << ui.ui_motion << '\n'
-''', '''        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n'
+replace(r'''        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n' << "uimotion " << ui.ui_motion << '\n'
+''', r'''        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n'
         << "voiceleading " << (p.voice_leading ? 1 : 0) << '\n'
         << "perffxenabled " << (ui.perf_fx_enabled ? 1 : 0) << '\n'
         << "uimotion " << ui.ui_motion << '\n'
@@ -160,8 +160,8 @@ replace('''    const bool logical_l1 = first != ui.swap_left_rear;
 ''', '''    const bool physical_l1 = first != ui.swap_left_rear;
     if (physical_l1) set_l2(ui, in, down, synth); else set_l1(ui, in, down, synth);
 ''')
-replace('''    std::cerr << "roles: shoulders=front octave, leftstick=L1, lefttrigger=L2, rightstick=R1, righttrigger=R2\n";
-''', '''    std::cerr << "roles: shoulders=front octave, physical L1=mode, physical L2=alt layer, R1/R2=chord banks\n";
+replace(r'''    std::cerr << "roles: shoulders=front octave, leftstick=L1, lefttrigger=L2, rightstick=R1, righttrigger=R2\n";
+''', r'''    std::cerr << "roles: shoulders=front octave, physical L1=mode, physical L2=alt layer, R1/R2=chord banks\n";
 ''')
 replace('''                else if (key == SDLK_q) set_l1(ui, input, down, synth);
                 else if (key == SDLK_w && down && event.key.repeat == 0) set_l2(ui, input, true, synth);
