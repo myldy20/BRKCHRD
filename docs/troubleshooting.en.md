@@ -1,16 +1,9 @@
-# Troubleshooting — English
+# BRKCHRD 0.4.0 Troubleshooting — English
 
 ## The application does not appear under Ports
 
-Check the launcher path and executable bit:
-
 ```bash
 ssh trimui 'ls -l "/userdata/roms/ports/BRKCHRD.sh" /userdata/roms/ports/brkchrd/*.aarch64'
-```
-
-Repair permissions:
-
-```bash
 ssh trimui 'chmod +x "/userdata/roms/ports/BRKCHRD.sh" /userdata/roms/ports/brkchrd/*.aarch64 && sync'
 ```
 
@@ -18,44 +11,73 @@ Refresh the game list or reboot.
 
 ## Immediate exit
 
-Read the log:
-
 ```bash
 ssh trimui 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
 ```
 
-Typical causes are a missing binary, incompatible architecture, SDL audio/video initialisation failure or an incomplete PortMaster control environment.
+Typical causes are a missing binary, incompatible architecture, SDL audio/video initialisation failure or an incomplete PortMaster environment.
 
-## Front or rear buttons perform the wrong action
+## L1 behaves like L2, or R1 behaves like R2
 
-Version 0.3 expects the mapping observed on TrimUI Brick with Knulli:
+Open Settings and toggle:
 
-- glowing front-left button — octave down;
-- glowing front-right button — octave up;
-- rear L1 and L2 — one left-side channel that advances the left-panel mode;
-- rear R1 and R2 — one right-side channel that advances the right-panel mode.
+- `SWAP L1/L2`
+- `SWAP R1/R2`
 
-Inspect the beginning of the log:
+The confirmed mapping exposes all four rear buttons separately, but another Knulli/controller order may reverse the two controls on one side. The SWAP settings change only BRKCHRD and are safer than global remapping.
 
-```bash
-ssh trimui 'sed -n "1,120p" /userdata/roms/ports/brkchrd/conf/brkchrd.log'
-```
-
-Look for:
+Expected v0.4 roles:
 
 ```text
-controller:
-mapping:
-controller button down:
-raw button down:
-raw axis:
+left shoulder / right shoulder = front octave controls
+left stick button              = L1
+left trigger                   = L2
+right stick button             = R1
+right trigger                  = R2
 ```
 
-BRKCHRD records only a limited number of raw events so the log cannot grow indefinitely.
+Inspect the first log lines:
 
-## X/Y or A/B labels appear swapped
+```bash
+ssh trimui 'sed -n "1,160p" /userdata/roms/ports/brkchrd/conf/brkchrd.log'
+```
 
-Version 0.3 displays the physical Brick labels:
+Look for `mapping:`, `roles:`, `controller button down:`, `raw button down:` and `raw axis:`.
+
+## L2 does not change D-pad mode
+
+L2 changes mode only on a new press and while Settings is closed. The header should cycle:
+
+```text
+CHORD → SOUND → PERF FX
+```
+
+If holding the intended L2 instead changes the left layer, turn on `SWAP L1/L2`.
+
+## Chord colour disappears in SOUND
+
+The selected colour should remain stored. SOUND does not intentionally reset it. Return to CHORD and inspect the active label. A colour is reset only by pressing the same direction again while its palette is displayed.
+
+Note that simply holding L1 shows another palette but does not select anything.
+
+## Performance FX remain stuck
+
+PERF FX should restore base FX when:
+
+- the D-pad returns to centre;
+- L2 changes mode;
+- Select opens Settings;
+- the program exits normally.
+
+If a direction appears released but the effect remains, capture `brkchrd.log` and state the exact D-pad direction. Use Start hold for all-notes-off; opening Settings also forces FX restoration.
+
+## Performance FX sound unlike the label
+
+The v0.4 labels describe musical gestures. Reverse-ish and Shimmer-ish are combinations of the current Delay/Reverb/Crusher/Chorus blocks, not dedicated reverse-buffer or pitch-shimmer algorithms. This is a known DSP limitation rather than a controller error.
+
+## ABXY labels or positions are wrong
+
+The intended physical layout is:
 
 ```text
         X
@@ -63,36 +85,24 @@ Version 0.3 displays the physical Brick labels:
         B
 ```
 
-Internally, Knulli may expose bottom B as SDL A, right A as SDL B, left Y as SDL X and top X as SDL Y. That is expected: BRKCHRD translates the positional SDL mapping back to the letters printed on the device.
-
-If pressing a physical position highlights a different on-screen position, attach `brkchrd.log`; that indicates another firmware mapping rather than a label issue.
-
-## The D-pad edits the wrong side
-
-The D-pad belongs to the most recently selected side. A bright double outline shows focus:
-
-- after a rear L press, the left panel is focused;
-- after a rear R press, the right panel is focused.
-
-In CLASSIC / EXTENDED / DARK and chord-bank views, the D-pad selects chord colour. In SOUND / SYSTEM / FX it selects and edits parameters.
+Internally Knulli may expose bottom B as SDL A, right A as SDL B, left Y as SDL X and top X as SDL Y. BRKCHRD translates by position. If the wrong on-screen position lights up, attach the log; that indicates another firmware mapping.
 
 ## Return to BASE
 
-In a colour view, press the currently armed D-pad direction again. There is no separate RESET COLOUR row in version 0.3.
+In CHORD mode, display the palette containing the stored direction and press that direction again. If the stored colour came from the L1 palette, hold L1 while pressing it again.
 
-## Emergency all-notes-off
+## All-notes-off
 
-Hold Select for approximately 0.85 seconds. BRKCHRD disables latch, clears held-chord state, stops every voice and displays `ALL NOTES OFF`.
+Hold Start for approximately 0.85 seconds. Latch no longer exists in 0.4.
 
 ## Crackles or high CPU use
 
-- reduce effect amounts, especially two delays/reverbs in series;
-- avoid maximum Release with dense six-note extended chords during initial testing;
-- test once with both effects Off;
-- compare the built-in speaker with headphones;
-- report engine, chord colour, play mode, effect settings and observed load.
-
-Interface animation does not run in the audio graph, but SYSTEM → UI MOTION → OFF is available for a clean comparison.
+- test with base FX1/FX2 set to Off;
+- avoid maximum Release with dense extended chords during initial testing;
+- compare normal operation with PERF FX held;
+- test UI Motion at Off;
+- compare built-in speaker and headphones;
+- report engine, chord colour, bank, play mode, D-pad direction and CPU load.
 
 ## Reset configuration
 
@@ -104,14 +114,4 @@ The next launch uses factory defaults.
 
 ## Useful bug report
 
-Include:
-
-- Knulli version;
-- exact archive name;
-- `brkchrd.log`;
-- the response of every physical button;
-- a photo of any clipped or overlapping text;
-- speaker or headphones;
-- approximate latency;
-- crackles and CPU load;
-- active left- and right-panel modes.
+Include Knulli version, exact archive name, `brkchrd.log`, physical button and expected role, active D-pad mode, L1 state, R1/R2 state, stored chord colour, base FX settings, speaker/headphones, latency, crackles, CPU load and a photo/video for layout or control problems.
