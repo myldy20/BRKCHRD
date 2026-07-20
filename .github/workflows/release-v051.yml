@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'release-trigger/v0.5.1'
+      - 'release-trigger/v0.5.1*'
   workflow_dispatch:
 
 permissions:
@@ -75,3 +75,19 @@ jobs:
               --title 'BRKCHRD 0.5.1' \
               --notes-file docs/releases/v0.5.1.md
           fi
+      - name: Record successful publication
+        run: |
+          set -euo pipefail
+          {
+            echo 'BRKCHRD v0.5.1 published successfully.'
+            echo "Workflow source: $GITHUB_SHA"
+            echo "Release URL: https://github.com/myldy20/BRKCHRD/releases/tag/v0.5.1"
+            echo
+            cat dist/SHA256SUMS.txt
+          } > docs/releases/v0.5.1.status.txt
+          git config user.name myldy20
+          git config user.email myldy20@users.noreply.github.com
+          git add docs/releases/v0.5.1.status.txt
+          git commit -m 'Record successful BRKCHRD v0.5.1 publication' || true
+          git pull --rebase origin main
+          git push origin HEAD:main
