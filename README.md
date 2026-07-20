@@ -1,65 +1,61 @@
 # BRKCHRD
 
-**BRKCHRD** is an open-source chord-performance instrument for TrimUI Brick. It turns the handheld into a self-contained harmony synth with functional chord banks, armable chord colours, automatic voice leading, ten synthesis engines and two editable effect slots.
+**BRKCHRD** is an open-source chord-performance instrument for TrimUI Brick. It turns the handheld into a self-contained harmony synth with functional chord banks, armable chord colours, automatic voice leading, ten synthesis engines, editable base effects and momentary performance FX.
 
-Current version: **0.3.0 Brick-native interface preview**.
+Current version: **0.4.0 performance workflow preview**.
 
 **English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [Architecture](docs/architecture.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Hardware test](docs/hardware-test-checklist.en.md)
 
 **Русский:** [Руководство](docs/manual.ru.md) · [Управление](docs/controls.ru.md) · [Звуковой движок](docs/sound-design.ru.md) · [Установка](docs/install.ru.md) · [Архитектура](docs/architecture.ru.md) · [Диагностика](docs/troubleshooting.ru.md) · [Аппаратный тест](docs/hardware-test-checklist.ru.md)
 
-## Why 0.3 exists
+## Why 0.4 exists
 
-Physical testing showed that Knulli does not expose the Brick as a conventional gamepad:
+Version 0.3 proved the visual system, but treated every rear control as a page switch. Physical testing and the controller log showed that the Brick exposes four distinct rear controls: L1/R1 through stick-button mappings and L2/R2 through trigger-button mappings. Version 0.4 uses them as performance controls rather than navigation.
 
-- the glowing front controls arrive as shoulder buttons;
-- rear L1/L2 share one left-side channel;
-- rear R1/R2 share one right-side channel;
-- SDL face-button letters are swapped relative to the caps printed on the Brick.
+## Performance model
 
-Version 0.3 embraces that mapping instead of fighting it.
+The right half always remains a playable ABXY chord diamond. The left half changes according to the current D-pad mode.
 
-## Brick-native workflow
+### CHORD
 
-The screen is permanently divided into two equal, independent panels.
+- D-pad selects and stores a chord colour.
+- L1 held shows an alternate colour palette.
+- Releasing L1 returns the display to the default palette, but does not erase the selected chord colour.
+- The stored colour continues to affect every chord while SOUND or PERF FX is open.
 
-### Left panel — rear L1 or L2
+The default palette and the L1-held palette are independently configurable as CLASSIC, EXTENDED or DARK.
 
-Each press cycles:
+### SOUND
 
-`CLASSIC → EXTENDED → DARK → SOUND → SYSTEM`
+L2 cycles into SOUND. D-pad Up/Down selects a parameter and Left/Right edits it.
 
-The first three modes select the chord-colour palette. SOUND edits the synthesis engine and macros. SYSTEM edits key and interface motion.
+- normal layer: Preset, Tone, Body and Motion;
+- L1 held: Attack, Release, Spread, BPM and Play Mode.
 
-### Right panel — rear R1 or R2
+ABXY stay playable during editing, and the previously selected maj7, power, sus, add9 or other chord colour remains active.
 
-Each press cycles:
+### PERF FX
 
-`CORE → DIATONIC+ → BORROWED → FX 1 → FX 2 → MASTER`
+L2 cycles again into PERF FX. Holding a D-pad direction temporarily replaces the two normal FX slots with a performance combination. Releasing the direction restores the saved base FX exactly.
 
-The first three modes select the active chord bank. FX 1 and FX 2 edit the serial effects. MASTER edits the final level and shows the signal path.
+- normal layer: cuts, stutters, chopping, crushing, drive, wash, deep echo and phase combinations;
+- L1 held: a second, more extreme bank with abyssal delay/reverb, ratetrap, glitch, broken, doom, shimmer-like, tunnel and alien combinations.
 
-The last rear side pressed becomes focused and receives the D-pad.
+This is designed as a sampler-style live gesture system rather than a menu of static effect presets.
 
-## Physical controls
+## Chord banks
 
-| Control | Action |
-| --- | --- |
-| glowing front left | octave down |
-| glowing front right | octave up |
-| rear L1 or L2 | next left-panel mode |
-| rear R1 or R2 | next right-panel mode |
-| D-pad | arm/hold chord colour or edit the focused panel |
-| physical B, bottom | first functional chord |
-| physical A, right | second functional chord |
-| physical Y, left | third functional chord |
-| physical X, top | fourth functional chord |
-| Start | next PAD / STRUM / ARP / PULSE mode |
-| short Select | latch on/off |
-| hold Select | all notes off |
-| Start + Select | save and exit |
+R1 and R2 are momentary chord-bank modifiers. The default, R1-held and R2-held banks can each be configured as CORE, DIATONIC+ or BORROWED.
 
-The core bank is arranged by physical position:
+The physical button layout is:
+
+```text
+        X
+Y               A
+        B
+```
+
+The default CORE mapping remains:
 
 ```text
         X = IV
@@ -67,46 +63,45 @@ Y = vi          A = V
         B = I
 ```
 
-ABXY remain playable while SOUND, SYSTEM, FX or MASTER is being edited.
+## Controls
 
-## Interface
+| Control | Action |
+| --- | --- |
+| glowing front left | octave down |
+| glowing front right | octave up |
+| L1 hold | alternate layer for CHORD, SOUND or PERF FX |
+| L2 press | cycle CHORD → SOUND → PERF FX |
+| R1 hold | configured alternate chord bank 1 |
+| R2 hold | configured alternate chord bank 2 |
+| D-pad | chord colour, sound edit or momentary performance FX |
+| ABXY | play functional chords in the active bank |
+| Select | open/close Settings |
+| Start tap | next PAD / STRUM / ARP / PULSE mode |
+| Start hold | all notes off |
+| Start + Select | save and exit |
 
-The 0.3 interface keeps the 512×384 logical canvas that scales exactly to the Brick's 1024×768 display, but replaces the uneven page layout with:
+Latch has been removed. A chord releases when its last ABXY button is released.
 
-- two equal 238-pixel panels;
-- equal-sized chord and colour cells;
-- compact tracked microtext instead of oversized small labels;
-- a focused-panel double outline;
-- animated background depth;
-- pulsing active chord controls;
-- reactive output meter;
-- animated FX response curves;
-- live current-chord and mode feedback.
+## Settings
 
-UI motion can be set to OFF, LOW or FULL under SYSTEM.
+Settings opens with Select and includes:
+
+- default and L1-held colour palettes;
+- default, R1-held and R2-held chord banks;
+- both base FX slots: Type, Amount and Colour;
+- key and octave;
+- UI motion: OFF, LOW or FULL;
+- SWAP L1/L2 and SWAP R1/R2 for firmware/controller-order differences.
 
 ## Sound engine
 
-Ten distinct synthesis engines:
+Ten synthesis engines remain available: Velvet Poly, Dust Piano, Chapel Organ, String Haze, Tape Choir, Wire Pluck, Frozen Glass, Doom Stack, Smoke Reed and Sub Altar.
 
-1. Velvet Poly
-2. Dust Piano
-3. Chapel Organ
-4. String Haze
-5. Tape Choir
-6. Wire Pluck
-7. Frozen Glass
-8. Doom Stack
-9. Smoke Reed
-10. Sub Altar
-
-Editable synthesis macros: Tone, Body, Motion, Attack, Release and Spread.
-
-Two serial effect slots support Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb. MASTER controls the final output level.
+Editable synthesis controls: Tone, Body, Motion, Attack, Release and Spread. Two serial base effect slots support Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb.
 
 ## Install on Knulli / PortMaster
 
-Download the latest successful `brkchrd-v030-portmaster-aarch64` workflow artifact and extract the inner installation ZIP into:
+Download the latest successful `brkchrd-v040-portmaster-aarch64` workflow artifact and extract the inner `brkchrd-v0.4.0-portmaster.zip` into:
 
 ```text
 /userdata/roms/ports/
@@ -119,16 +114,14 @@ Expected files:
 /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
 ```
 
-Refresh the game list or reboot, then open **Ports → BRKCHRD**.
-
-Runtime configuration and logs:
+Runtime files:
 
 ```text
 /userdata/roms/ports/brkchrd/conf/brkchrd.cfg
 /userdata/roms/ports/brkchrd/conf/brkchrd.log
 ```
 
-The log includes the detected SDL controller mapping and a limited raw input trace for hardware diagnostics.
+The log records the SDL mapping, raw controller events and the expected v0.4 control roles.
 
 ## Build
 
@@ -138,15 +131,5 @@ cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ./build/brkchrd-sdl
 ```
-
-Render the ten-engine demonstration:
-
-```bash
-./build/brkchrd-render brkchrd-demo.wav
-```
-
-## Status
-
-Automated validation covers Linux SDL2, tests, dummy video/audio startup, WAV rendering and an Ubuntu 20.04-compatible AArch64 PortMaster package. Physical validation is still required for the final visual balance, controller feel, speaker voicing, latency and CPU load.
 
 BRKCHRD is GPL-3.0-or-later software developed by **Myldy design** — [@myldy20](https://github.com/myldy20).
