@@ -1,0 +1,29 @@
+name: apply-effect-reset-fix
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-060-truth-safety
+    paths:
+      - tools/apply-effect-reset.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - run: python3 tools/apply_effect_reset_fix.py
+      - run: |
+          set -euo pipefail
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add src/synth.cpp
+          git diff --cached --quiet && exit 0
+          git commit -m 'Reset effect state without clearing buffers in the UI thread'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
