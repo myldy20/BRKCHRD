@@ -1,111 +1,33 @@
-name: build
+name: migrate-v052
 
 on:
   push:
-  pull_request:
+    branches:
+      - agent/brkchrd-v052
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: build-${{ github.workflow }}-${{ github.ref }}
+  group: migrate-v052-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  linux:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq libsdl2-dev
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        run: cmake --build build --parallel 2
-      - name: Test chord construction and voicing
-        run: ctest --test-dir build --output-on-failure
-      - name: SDL startup smoke test
-        run: |
-          set +e
-          BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
-          status=$?
-          test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render sixteen-preset demo
-        run: build/brkchrd-render brkchrd-v051-demo.wav
-      - name: Check documentation, branding and licensing
-        run: |
-          grep -q 'BRKCHRD 0.5.1' docs/manual.en.md
-          grep -q 'BRKCHRD 0.5.1' docs/manual.ru.md
-          grep -qi 'voice lead' docs/manual.en.md
-          grep -qi 'voice lead' docs/manual.ru.md
-          grep -q 'L1' docs/controls.en.md
-          grep -q 'L2' docs/controls.ru.md
-          grep -q 'PERF FX' docs/controls.en.md
-          grep -q 'PERF FX' docs/controls.ru.md
-          grep -q 'NextUI' docs/install.nextui.en.md
-          grep -q 'NextUI' docs/install.nextui.ru.md
-          grep -q 'Based on BRKCHRD by Myldy design' NOTICE.md
-          grep -q 'GNU GENERAL PUBLIC LICENSE' LICENSE
-          test -f assets/branding/brkchrd-logo.svg
-          test -f assets/branding/brkchrd-banner.jpg
-          test -f packaging/portmaster/brkchrd/screenshot.jpg
-          test -f packaging/portmaster/brkchrd/cover.jpg
-          test -f packaging/nextui/tg5040/.media/BRKCHRD.png
-      - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v051-audio-demo
-          path: brkchrd-v051-demo.wav
-
-  aarch64-packages:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and package in Ubuntu 20.04 AArch64 container
+          ref: agent/brkchrd-v052
+          fetch-depth: 0
+      - name: Apply reviewed BRKCHRD 0.5.2 migration
+        run: python3 tools/migrate_v052.py
+      - name: Commit source, documentation hooks and permanent CI
         run: |
-          docker run --rm \
-            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
-            bash -ec '
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update -qq
-              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
-              cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
-              cmake --build build-aarch64 --parallel 2
-              ctest --test-dir build-aarch64 --output-on-failure
-              strip build-aarch64/brkchrd-sdl
-              sh ./tools/package_portmaster.sh build-aarch64 dist
-              sh ./tools/package_nextui.sh build-aarch64 dist
-            '
-      - name: Inspect AArch64 binary
-        run: |
-          file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
-          grep -q 'ARM aarch64' /tmp/binary.txt
-      - name: Inspect PortMaster package
-        run: |
-          file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
-          grep -Eq '640 ?x ?480' /tmp/screenshot.txt
-          unzip -l dist/brkchrd-v0.5.1-portmaster.zip | tee /tmp/portmaster.txt
-          grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
-          grep -q 'screenshot.jpg' /tmp/portmaster.txt
-          grep -q 'cover.jpg' /tmp/portmaster.txt
-          grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
-          grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
-          grep -q 'brkchrd/licenses/NOTICE.md' /tmp/portmaster.txt
-          grep -q 'brkchrd/docs/manual.en.md' /tmp/portmaster.txt
-          grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
-      - name: Inspect NextUI package
-        run: |
-          unzip -l dist/brkchrd-v0.5.1-nextui-tg5040.zip | tee /tmp/nextui.txt
-          grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
-          grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
-          grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
-          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
-          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/NOTICE.md' /tmp/nextui.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: brkchrd-v051-portmaster-aarch64
-          path: dist/brkchrd-v0.5.1-portmaster.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: brkchrd-v051-nextui-tg5040
-          path: dist/brkchrd-v0.5.1-nextui-tg5040.zip
+          set -euo pipefail
+          git config user.name myldy20
+          git config user.email myldy20@users.noreply.github.com
+          git add -A
+          git commit -m 'Add Russian UI and hold-mode chord colours'
+          git push origin HEAD:agent/brkchrd-v052
