@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "brkchrd.zip",
+  "items": ["BRKCHRD.sh", "brkchrd"],
+  "items_opt": null,
+  "attr": {
+    "title": "BRKCHRD",
+    "desc": "Live chord-performance instrument with functional harmony, sixteen synthesis presets, deterministic or expressive voice leading, instrument-aware voicings and optional performance FX.",
+    "inst": "Verified on TrimUI Brick with Knulli. L1 cycles CHORD/SOUND/PERF FX, L2 holds alternate layers, R1/R2 select temporary chord banks and Select opens Settings. Start+Select saves and exits.",
+    "genres": ["music"],
+    "porter": ["myldy20"],
+    "image": {},
+    "rtr": true,
+    "runtime": null,
+    "reqs": [],
+    "arch": ["aarch64"]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "BRKCHRD",
+  "version": "v0.5.1",
+  "type": "TOOL",
+  "description": "Live chord-performance instrument with functional harmony, sixteen synth presets and performance FX.",
+  "author": "Myldy design",
+  "repo_url": "https://github.com/myldy20/BRKCHRD",
+  "release_filename": "brkchrd-v0.5.1-nextui-tg5040.zip",
+  "platforms": ["tg5040"]
+}

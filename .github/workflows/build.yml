@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -20,34 +23,41 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --parallel 2
-      - name: Test
+      - name: Test chord construction and voicing
         run: ctest --test-dir build --output-on-failure
       - name: SDL startup smoke test
         run: |
           set +e
-          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
           test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render ten-engine demo
-        run: build/brkchrd-render brkchrd-v040-demo.wav
-      - name: Check bilingual documentation
+      - name: Render sixteen-preset demo
+        run: build/brkchrd-render brkchrd-v051-demo.wav
+      - name: Check documentation, branding and licensing
         run: |
-          grep -q 'BRKCHRD 0.4.0' docs/manual.en.md
-          grep -q 'BRKCHRD 0.4.0' docs/manual.ru.md
+          grep -q 'BRKCHRD 0.5.1' docs/manual.en.md
+          grep -q 'BRKCHRD 0.5.1' docs/manual.ru.md
+          grep -qi 'voice lead' docs/manual.en.md
+          grep -qi 'voice lead' docs/manual.ru.md
           grep -q 'L1' docs/controls.en.md
-          grep -q 'L2' docs/controls.en.md
-          grep -q 'PERF FX' docs/controls.en.md
-          grep -q 'L1' docs/controls.ru.md
           grep -q 'L2' docs/controls.ru.md
+          grep -q 'PERF FX' docs/controls.en.md
           grep -q 'PERF FX' docs/controls.ru.md
-          test -f docs/sound-design.en.md
-          test -f docs/sound-design.ru.md
+          grep -q 'NextUI' docs/install.nextui.en.md
+          grep -q 'NextUI' docs/install.nextui.ru.md
+          grep -q 'Based on BRKCHRD by Myldy design' NOTICE.md
+          grep -q 'GNU GENERAL PUBLIC LICENSE' LICENSE
+          test -f assets/branding/brkchrd-logo.svg
+          test -f assets/branding/brkchrd-banner.jpg
+          test -f packaging/portmaster/brkchrd/screenshot.jpg
+          test -f packaging/portmaster/brkchrd/cover.jpg
+          test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v040-audio-demo
-          path: brkchrd-v040-demo.wav
+          name: brkchrd-v051-audio-demo
+          path: brkchrd-v051-demo.wav
 
-  portmaster-aarch64:
+  aarch64-packages:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -64,19 +74,38 @@ jobs:
               ctest --test-dir build-aarch64 --output-on-failure
               strip build-aarch64/brkchrd-sdl
               sh ./tools/package_portmaster.sh build-aarch64 dist
+              sh ./tools/package_nextui.sh build-aarch64 dist
             '
-      - name: Inspect binary and package
+      - name: Inspect AArch64 binary
         run: |
           file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
           grep -q 'ARM aarch64' /tmp/binary.txt
-          unzip -l dist/brkchrd-v0.4.0-portmaster.zip | tee /tmp/package.txt
-          grep -q 'BRKCHRD.sh' /tmp/package.txt
-          grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/package.txt
-          grep -q 'brkchrd/docs/manual.en.md' /tmp/package.txt
-          grep -q 'brkchrd/docs/manual.ru.md' /tmp/package.txt
-          grep -q 'brkchrd/docs/controls.en.md' /tmp/package.txt
-          grep -q 'brkchrd/docs/controls.ru.md' /tmp/package.txt
+      - name: Inspect PortMaster package
+        run: |
+          file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
+          grep -Eq '640 ?x ?480' /tmp/screenshot.txt
+          unzip -l dist/brkchrd-v0.5.1-portmaster.zip | tee /tmp/portmaster.txt
+          grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
+          grep -q 'screenshot.jpg' /tmp/portmaster.txt
+          grep -q 'cover.jpg' /tmp/portmaster.txt
+          grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
+          grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
+          grep -q 'brkchrd/licenses/NOTICE.md' /tmp/portmaster.txt
+          grep -q 'brkchrd/docs/manual.en.md' /tmp/portmaster.txt
+          grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
+      - name: Inspect NextUI package
+        run: |
+          unzip -l dist/brkchrd-v0.5.1-nextui-tg5040.zip | tee /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/NOTICE.md' /tmp/nextui.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v040-portmaster-aarch64
-          path: dist/brkchrd-v0.4.0-portmaster.zip
+          name: brkchrd-v051-portmaster-aarch64
+          path: dist/brkchrd-v0.5.1-portmaster.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-v051-nextui-tg5040
+          path: dist/brkchrd-v0.5.1-nextui-tg5040.zip
