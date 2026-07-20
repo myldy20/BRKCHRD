@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
+  <title id="title">BRKCHRD</title>
+  <desc id="desc">Chord keyboard and handheld controls in a cream outline on a dark background.</desc>
+  <rect width="1254" height="1254" fill="#111514"/>
+  <g fill="#f1e3c5" stroke="#f1e3c5" stroke-linejoin="round">
+    <rect x="357" y="215" width="540" height="630" rx="54" fill="none" stroke-width="28"/>
+    <rect x="405" y="270" width="64" height="258" stroke="none"/>
+    <rect x="488" y="270" width="70" height="292" stroke="none"/>
+    <rect x="574" y="270" width="76" height="258" stroke="none"/>
+    <rect x="684" y="270" width="73" height="218" stroke="none"/>
+    <rect x="793" y="270" width="53" height="275" stroke="none"/>
+    <rect x="405" y="542" width="66" height="94" stroke="none"/>
+    <rect x="488" y="576" width="70" height="61" stroke="none"/>
+    <rect x="574" y="542" width="76" height="94" stroke="none"/>
+    <rect x="665" y="505" width="91" height="80" stroke="none"/>
+    <rect x="665" y="600" width="91" height="37" stroke="none"/>
+    <rect x="773" y="559" width="73" height="78" stroke="none"/>
+    <path d="M427 713h36v-36h41v36h37v42h-37v36h-41v-36h-36z" stroke="none"/>
+    <rect x="593" y="697" width="64" height="13" rx="5" stroke="none"/>
+    <rect x="593" y="725" width="64" height="13" rx="5" stroke="none"/>
+    <rect x="593" y="753" width="64" height="13" rx="5" stroke="none"/>
+    <circle cx="740" cy="705" r="21" stroke="none"/>
+    <circle cx="797" cy="705" r="21" stroke="none"/>
+    <circle cx="740" cy="761" r="21" stroke="none"/>
+    <circle cx="797" cy="761" r="21" stroke="none"/>
+  </g>
+  <text x="627" y="1018" text-anchor="middle" fill="#f1e3c5" font-family="DejaVu Sans, sans-serif" font-size="154" font-weight="900" letter-spacing="3">BRKCHRD</text>
+</svg>
