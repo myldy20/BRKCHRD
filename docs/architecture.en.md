@@ -1,132 +1,130 @@
-# BRKCHRD 0.4.0 Architecture — English
+# BRKCHRD 0.5.1 Architecture — English
 
 ## Modules
 
 ```text
-music.cpp      functional chord banks, colour definitions and voice leading
-synth.cpp      voices, ten synthesis models, play modes and effect algorithms
-sdl_main.cpp   Brick input routing, performance state, UI, persistence and SDL bridge
+music.cpp      chord banks, colour definitions, deterministic voicing and live voice leading
+synth.cpp      voice allocator, synthesis models, play modes and effect algorithms
+sdl_main.cpp   Brick input routing, UI, persistence, SDL audio/video bridge
 ```
 
-The harmony/audio core remains independent from SDL2, allowing unit tests and offline WAV rendering without the handheld frontend.
+The harmony/audio core does not depend on SDL2, so unit tests and offline WAV rendering can run without the handheld frontend.
 
-## Independent performance state
+## State flow
 
-Version 0.4 separates musical state from the view currently controlled by the D-pad:
-
-```text
-stored chord colour  ───────────────┐
-active base/R1/R2 bank ─────────────┼→ ChordSpec → voice leading → notes
-physical ABXY position ─────────────┘
-
-D-pad mode = CHORD | SOUND | PERF FX
-```
-
-Changing to SOUND or PERF FX therefore does not alter the stored chord colour. The colour changes only through CHORD-mode selection.
-
-## Harmony path
+Musical state is independent from the current D-pad screen:
 
 ```text
-physical face position
-  + active momentary bank (R2 > R1 > base)
-  + stored colour palette/direction
+physical face button
+  + active bank (R2 > R1 > base)
+  + stored palette and direction
+  + key and octave
       → ChordSpec
-      → inversion search / nearest voice-leading candidate
+      → preset voicing profile
+      → deterministic voicing or anchored live voice leading
       → MIDI-note vector
 ```
 
-Knulli reports Xbox-style SDL face positions while the Brick uses different printed letters. BRKCHRD translates by physical position before drawing labels.
+Changing from CHORD to SOUND or PERF FX does not erase the stored chord colour.
 
-## Rear-control routing
+## Chord construction
 
-The confirmed mapping is handled explicitly:
+`music.cpp` resolves the physical face position through the selected bank, preserving the degree quality when applying CLASSIC, EXTENDED or DARK colour. Interval lists are normalised before voicing.
 
-- front left/right shoulders: octave down/up;
-- left-stick button: physical rear L1;
-- left trigger: physical rear L2;
-- right-stick button: physical rear R1;
-- right trigger: physical rear R2.
+`voice_chord()` has two paths:
 
-Settings contain two logical swap flags. They exchange L1/L2 or R1/R2 roles without changing the global controller mapping.
+- deterministic: ignores previous notes and applies the preset's Keys, Organ, Pad, Choir, Pluck, Heavy or Bass profile;
+- live: evaluates inversions near the previous chord, while constraining candidates around the octave-selected target register.
 
-### L1
+## Input routing
 
-L1 is a momentary layer flag interpreted by the active D-pad mode:
+The tested Knulli mapping exposes four distinct rear controls:
 
-- CHORD: alternate palette display/selection;
-- SOUND: alternate parameter bank;
-- PERF FX: alternate performance-effect bank.
+- front shoulders: octave down/up;
+- physical L1: SDL left-stick button;
+- physical L2: SDL left trigger;
+- physical R1: SDL right-stick button;
+- physical R2: SDL right trigger.
 
-### L2
+Current roles:
 
-L2 is edge-triggered and cycles the D-pad state machine:
-
-```text
-CHORD → SOUND → PERF FX → CHORD
-```
-
-### R1/R2
-
-R1 and R2 are independent momentary bank flags. Priority is R2, then R1, then the base bank. A sounding chord is rebuilt when either flag changes.
+- L1 is edge-triggered and cycles CHORD → SOUND → PERF FX;
+- L2 is a held alternate-layer flag interpreted by the current screen;
+- R1/R2 are held chord-bank flags, with R2 priority;
+- Settings can swap left or right rear roles for other firmware mappings.
 
 ## Performance FX transaction
 
-Momentary performance FX use a snapshot/restore transaction:
+Momentary performance FX use snapshot/restore semantics:
 
-1. First non-centred D-pad direction snapshots FX1 and FX2.
-2. The chosen direction and L1 layer generate a temporary effect pair.
-3. Moving the D-pad replaces that pair.
-4. Returning to centre restores the snapshot.
-5. Leaving PERF FX, opening Settings or exiting also restores the snapshot.
+1. the first non-centred direction snapshots FX1 and FX2;
+2. direction and L2 layer choose a temporary pair;
+3. moving the D-pad replaces the temporary pair;
+4. returning to centre restores the snapshot;
+5. leaving PERF FX, disabling it, opening Settings or exiting also restores the snapshot.
 
-This keeps destructive live gestures separate from the saved base chain.
+The saved base chain is therefore not overwritten by a live gesture.
 
 ## Audio path
 
 ```text
 note vector
-  → 24-voice allocator
+  → bounded voice allocator
   → model-specific oscillator/excitation
-  → body filter and stereo spread
+  → envelope, body filter and stereo spread
+  → chord-count normalisation and preset level trim
   → FX1
   → FX2
   → master soft clipping
   → 48 kHz float stereo SDL callback
 ```
 
-No allocation occurs inside the per-sample loop. UI edits and the audio callback currently use the existing mutex-based synchronisation.
+Effect delay buffers are preallocated. Per-sample processing performs no file I/O.
 
 ## UI structure
 
-The 512×384 logical canvas retains a fixed header, two equal performance panels and footer.
+The logical canvas is 512×384 and scales to the device display.
 
+- fixed header with key, mode, octave and one output meter;
 - left panel follows CHORD, SOUND or PERF FX;
-- right panel always shows the playable chord diamond and active bank;
+- right panel always shows the playable face-button diamond;
 - Settings is a full-screen overlay;
-- labels use fixed geometry and clipping;
-- animation derives from time, output peak and current interaction state.
+- footer displays physical-button actions;
+- text uses an embedded bitmap font.
+
+In 0.5.1 the preset uses a dedicated 52-pixel card, right-side values use `text_right`, and active parameter bars use a contrasting fill.
 
 ## Persistence
 
-`brkchrd.cfg` stores:
+The configuration stores:
 
 - key and octave;
-- default and L1-held palettes;
-- stored chord palette/direction;
-- base, R1-held and R2-held banks;
-- D-pad mode;
-- preset, BPM, play mode and all synth macros;
-- base FX1 and FX2;
+- normal and L2 palettes;
+- selected palette/direction;
+- base, R1 and R2 banks;
+- current D-pad mode;
+- preset, BPM, play mode and synthesis macros;
+- FX1 and FX2;
+- Voice Lead and PERF FX switches;
 - UI motion;
-- left/right rear swap flags.
+- rear-button swap flags.
 
-Legacy latch is read only for compatibility and forced off.
+PortMaster and NextUI launchers set different persistent paths but use the same configuration format.
+
+## Packaging
+
+The same stripped AArch64 executable is packaged twice:
+
+- PortMaster/Knulli: launcher and assets under the ports tree;
+- NextUI: `Tools/tg5040/BRKCHRD.pak` plus sibling `.media/BRKCHRD.png`.
+
+Both archives include English/Russian documentation, GPLv3, `NOTICE.md` and third-party notices.
 
 ## Performance targets
 
-- logical UI: 512×384 scaled to 1024×768;
-- audio: 48 kHz stereo float, requested 512-frame buffer;
+- logical UI: 512×384;
+- audio: 48 kHz float stereo, 512-frame requested buffer;
 - maximum voices: 24;
 - two preallocated effect buffers;
-- bounded controller-event logging;
-- target: TrimUI Brick AArch64 / Knulli Scarab.
+- bounded input logging;
+- primary target: TrimUI Brick AArch64.
