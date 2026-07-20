@@ -1,63 +1,104 @@
-# Установка BRKCHRD 0.5.0 на TrimUI Brick / Knulli
+# Установка BRKCHRD 0.5.1 на TrimUI Brick / Knulli
 
-Скачай артефакт `brkchrd-v050-portmaster-aarch64` из успешной сборки GitHub Actions. Во внешнем ZIP от GitHub находится установочный архив:
+## Что нужно
+
+- TrimUI Brick или другая совместимая AArch64-консоль;
+- Knulli с поддержкой PortMaster;
+- релизный файл `brkchrd-v0.5.1-portmaster.zip`;
+- около 5 МБ свободного места;
+- SSH необязателен, но удобнее всего для тестовых обновлений.
+
+## Способ A: через SD-карту
+
+1. Корректно выключите консоль и извлеките карту.
+2. Откройте каталог портов PortMaster.
+3. Распакуйте **содержимое** `brkchrd-v0.5.1-portmaster.zip` в:
 
 ```text
-brkchrd-v0.5.0-portmaster.zip
+/userdata/roms/ports/
 ```
 
-## Установка по SSH
-
-```bash
-scp ~/Downloads/brkchrd-v0.5.0-portmaster.zip \
-  root@10.53.219.134:/userdata/system/
-
-ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.5.0-portmaster.zip \
-    -d /userdata/roms/ports/ &&
-  chmod +x "/userdata/roms/ports/BRKCHRD.sh" &&
-  chmod +x /userdata/roms/ports/brkchrd/*.aarch64 &&
-  sync && reboot
-'
-```
-
-Ожидаемые файлы:
+4. Проверьте наличие файлов:
 
 ```text
 /userdata/roms/ports/BRKCHRD.sh
 /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
+/userdata/roms/ports/brkchrd/cover.jpg
 ```
 
-## Обновление с 0.4
+5. Верните карту, загрузите Knulli и обновите список игр, если BRKCHRD не появился сразу.
 
-Версия 0.5 сохраняет совместимые key, octave, palette, bank, sound и обычные FX. Новые значения по умолчанию:
+В архив также входят верхнеуровневые `screenshot.jpg` и `cover.jpg` для метаданных PortMaster и полная документация в `brkchrd/docs/`.
 
-```text
-VOICE LEAD = OFF
-PERF FX = ON
+## Способ B: через SSH
+
+Если архив лежит в `~/Downloads`, а адрес консоли — `10.53.219.134`:
+
+```bash
+scp ~/Downloads/brkchrd-v0.5.1-portmaster.zip \
+  root@10.53.219.134:/userdata/system/
+
+ssh root@10.53.219.134 '
+  unzip -o /userdata/system/brkchrd-v0.5.1-portmaster.zip \
+    -d /userdata/roms/ports/ &&
+  chmod +x /userdata/roms/ports/BRKCHRD.sh &&
+  chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
+  sync
+'
 ```
 
-Функции L1/L2 поменялись: L1 переключает режим D-pad, L2 удержанием открывает альтернативный слой. `SWAP L1/L2` по-прежнему нужен только для различий порядка кнопок в прошивке.
+После установки обновите список Ports или перезагрузите консоль.
 
-Для полностью чистого теста:
+## Обновление с 0.5.0
+
+Бинарник и документацию можно перезаписать поверх. Формат настроек совместим.
+
+Перед тестом заводских значений сохраните копию:
+
+```bash
+ssh root@10.53.219.134 '
+  cp /userdata/roms/ports/brkchrd/conf/brkchrd.cfg \
+     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.backup \
+     2>/dev/null || true
+'
+```
+
+Для чистого запуска переименуйте конфиг:
 
 ```bash
 ssh root@10.53.219.134 '
   mv /userdata/roms/ports/brkchrd/conf/brkchrd.cfg \
-     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.pre-v050 2>/dev/null || true
+     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.pre-v051 \
+     2>/dev/null || true
 '
 ```
 
-## Лог
+## Постоянные данные
 
-```bash
-ssh root@10.53.219.134 \
-  'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
+Launcher направляет HOME и XDG в сохраняемый каталог пакета:
+
+```text
+/userdata/roms/ports/brkchrd/conf/brkchrd.cfg
+/userdata/roms/ports/brkchrd/conf/brkchrd.log
 ```
 
-Скачать на Mac:
+Не храните личные файлы рядом с бинарником вне `conf/`: следующая распаковка релиза может их перезаписать.
 
-```bash
-scp root@10.53.219.134:/userdata/roms/ports/brkchrd/conf/brkchrd.log \
-  ~/Downloads/brkchrd-v050.log
+## Удаление
+
+При необходимости сохраните `brkchrd.cfg`, затем удалите:
+
+```text
+/userdata/roms/ports/BRKCHRD.sh
+/userdata/roms/ports/brkchrd/
 ```
+
+## Первая проверка
+
+1. Убедитесь, что заставка показывается две секунды.
+2. Откройте SOUND и проверьте, что название пресета помещается в крупную карточку.
+3. Выберите Motion и убедитесь, что шкала не исчезает.
+4. Откройте Settings: значения должны иметь отступ справа, а внизу должно быть `SAVE AND EXIT`.
+5. Выйдите через Start+Select и проверьте восстановление настроек при следующем запуске.
+
+При проблемах смотрите [диагностику](troubleshooting.ru.md).
