@@ -1,19 +1,15 @@
-# BRKCHRD 0.4.0 Controls — English
+# BRKCHRD 0.5.0 Controls — English
 
-## Hardware mapping confirmed on TrimUI Brick
+## Physical mapping
 
-The Knulli controller mapping used for BRKCHRD 0.4 exposes the controls separately:
+The confirmed TrimUI Brick / Knulli mapping exposes all rear controls separately:
 
-- glowing front-left: SDL left shoulder;
-- glowing front-right: SDL right shoulder;
-- rear L1: SDL left-stick button;
-- rear L2: SDL left trigger;
-- rear R1: SDL right-stick button;
-- rear R2: SDL right trigger;
-- D-pad: hat directions;
-- printed ABXY letters use the Brick's physical layout rather than SDL's logical names.
+- glowing front-left/right: SDL left/right shoulder;
+- rear L1/R1: SDL left/right stick buttons;
+- rear L2/R2: SDL left/right triggers;
+- printed ABXY letters are translated by physical position.
 
-If a firmware presents L1/L2 or R1/R2 in the opposite physical order, use `SWAP L1/L2` or `SWAP R1/R2` in Settings.
+`SWAP L1/L2` and `SWAP R1/R2` compensate for firmware variants that report the upper/lower order differently.
 
 ## Main controls
 
@@ -21,69 +17,77 @@ If a firmware presents L1/L2 or R1/R2 in the opposite physical order, use `SWAP 
 | --- | --- |
 | glowing front-left | octave down |
 | glowing front-right | octave up |
-| L1 hold | temporary alternate layer for the current D-pad mode |
-| L2 press | cycle `CHORD → SOUND → PERF FX` |
+| **L1 press** | cycle D-pad mode |
+| **L2 hold** | temporary alternate layer of the current D-pad mode |
 | R1 hold | configured alternate chord bank 1 |
 | R2 hold | configured alternate chord bank 2 |
 | ABXY | play functional chords |
-| Start tap | cycle PAD / STRUM / ARP / PULSE |
+| Start tap | PAD / STRUM / ARP / PULSE |
 | Start hold | all notes off |
-| Select | open or close Settings |
+| Select | open/close Settings |
 | Start + Select | save and exit |
 
-Latch is intentionally absent. Releasing the last held ABXY button releases the chord.
+Latch is absent. Releasing the last held ABXY button releases the chord.
+
+## L1: D-pad mode
+
+With PERF FX enabled, each new L1 press cycles:
+
+```text
+CHORD → SOUND → PERF FX → CHORD
+```
+
+With PERF FX disabled:
+
+```text
+CHORD ↔ SOUND
+```
+
+L1 changes mode once per press, not repeatedly while held.
+
+## L2: alternate layer
+
+L2 is momentary:
+
+- CHORD: show/select the configured alternate colour palette;
+- SOUND: show/edit Attack, Release, Spread, BPM and Play Mode;
+- PERF FX: use the second, more extreme performance-effect bank.
+
+Releasing L2 returns to the normal layer without erasing edits or the stored chord colour.
 
 ## CHORD mode
 
-The D-pad selects a chord colour. The choice is stored independently from the currently visible palette.
+The D-pad stores one colour. It applies to every ABXY chord until another colour is selected or BASE is restored.
 
-- tap a direction to select that colour;
-- tap the same direction while the same palette is displayed to return to BASE;
-- play any ABXY chord: the stored colour is applied;
-- switch to SOUND or PERF FX: the stored colour remains active;
-- hold L1: show the alternate palette;
-- release L1: return to the default palette without erasing the stored colour.
+- tap a direction to select its colour;
+- tap the same direction again while its palette is visible to return to BASE;
+- hold L2 to show the alternate palette;
+- selecting a colour while L2 is held stores it after L2 is released;
+- merely viewing the L2 palette does not change the current chord.
 
-Settings independently define:
+Settings independently define `BASE COLOUR` and `L2 COLOUR` as CLASSIC, EXTENDED or DARK.
 
-- `BASE COLOUR`: palette shown normally;
-- `L1 COLOUR`: palette shown while L1 is held.
+### Quality-aware extensions
 
-Both can be CLASSIC, EXTENDED or DARK.
+Version 0.5 no longer forces major extensions onto every scale degree. Examples:
 
-### CLASSIC directions
-
-| Direction | Colour |
-| --- | --- |
-| Up-left | augmented |
-| Up | major/minor flip |
-| Up-right | dominant 7 / minor 7 |
-| Left | dark minor / diminished |
-| Right | major 7 / minor 7 |
-| Down-left | sixth / sus2 |
-| Down | sus4 |
-| Down-right | add9 / minor 9 |
-
-### EXTENDED directions
-
-ADD11, DOM9, 6/9, MIN11, 7SUS, HALF-DIM, mMAJ7 and LYDIAN.
-
-### DARK directions
-
-POWER, CRUNCH 7#9, QUARTAL, CLUSTER add♭9, OPEN no-third, MIN6, TRITONE and AUGMAJ7.
+- major degree + 9th → dominant 9 or major 9 according to direction;
+- minor degree + 9th → minor 9;
+- diminished degree + seventh → diminished 7 or half-diminished;
+- sixth/add9 colours retain the degree's major, minor or diminished quality.
 
 ## SOUND mode
 
-Press L2 once from CHORD. ABXY remain playable and the stored chord colour does not change.
+ABXY, R1/R2 and the selected chord colour remain active while editing.
 
-### Normal layer
+Normal layer:
 
 - Preset
 - Tone
 - Body
 - Motion
 
-### L1-held layer
+L2-held layer:
 
 - Attack
 - Release
@@ -91,39 +95,21 @@ Press L2 once from CHORD. ABXY remain playable and the stored chord colour does 
 - BPM
 - Play Mode
 
-Use D-pad Up/Down to select a row. Use Left/Right to edit. Holding Left/Right accelerates the change.
+D-pad Up/Down selects a row. Left/Right changes the value. Holding Left/Right accelerates editing.
 
-L1 is momentary: releasing it returns to the normal parameter bank while preserving all edits.
+Changing Preset also changes the voicing profile used for later chords. A currently held chord is rebuilt on the next musical input; release and press it again when comparing presets.
 
 ## PERF FX mode
 
-Press L2 again from SOUND. This mode turns the D-pad into a momentary performance-effects controller.
+When enabled, holding a D-pad direction temporarily replaces base FX1/FX2 with a performance combination. Releasing all directions restores the base effects exactly.
 
-- hold a D-pad direction: the assigned two-effect combination becomes active;
-- move to another direction: the combination changes immediately;
-- release the D-pad: the original base FX1 and FX2 settings are restored exactly;
-- hold L1: use the second, more extreme FX bank;
-- release L1 while holding a direction: switch back to the normal FX bank.
+L2 selects the alternate performance bank while held. Opening Settings, changing mode or exiting also restores the base chain.
 
-### Normal performance bank
+Set `PERF FX = OFF` in Settings to remove this mode from the L1 cycle.
 
-Reverse-ish, Stutter, Chop, Crush, Drive, Wash, Deep Echo and Phase combinations.
+## R1/R2 chord banks
 
-### L1-held performance bank
-
-Abyss, Ratetrap, Glitch, Broken, Doom, Shimmer-ish, Tunnel and Alien combinations.
-
-These names describe performance gestures. The current engine implements them by combining the available Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb algorithms. They are momentary and do not overwrite the saved base effects.
-
-## Chord banks
-
-Settings independently define:
-
-- `BASE BANK`: no rear R button held;
-- `R1 BANK`: R1 held;
-- `R2 BANK`: R2 held.
-
-Each can be CORE, DIATONIC+ or BORROWED.
+Settings independently assign `BASE BANK`, `R1 BANK` and `R2 BANK` as CORE, DIATONIC+ or BORROWED.
 
 | Physical position | Button | CORE | DIATONIC+ | BORROWED |
 | --- | --- | --- | --- | --- |
@@ -132,52 +118,73 @@ Each can be CORE, DIATONIC+ or BORROWED.
 | left | Y | vi | vii° | ♭VI |
 | top | X | IV | ♭VII | ♭III |
 
-R1 and R2 are momentary. Releasing them returns to BASE BANK. If a chord is already sounding, the voicing updates to the newly selected bank.
+R1/R2 are momentary. A held chord rebuilds immediately when the active bank changes.
+
+## VOICE LEAD
+
+`VOICE LEAD` controls whether chord register depends on the previous chord.
+
+### OFF — default
+
+- the same button/settings always produce the same notes;
+- clockwise and counter-clockwise routes do not change the result;
+- front octave buttons move the entire chord by exactly 12 semitones;
+- the selected preset still applies its instrument-specific spacing.
+
+### ON
+
+- BRKCHRD searches nearby inversions for smoother transitions;
+- route order can change inversion/register intentionally;
+- unlike 0.4, candidates stay near the octave requested by the front controls;
+- turning the option Off immediately restores deterministic behaviour on the next chord.
+
+## Instrument-aware voicing
+
+The preset chooses a profile automatically:
+
+- Keys/Organ: clear shell voicings;
+- Pad/Choir: wider voicings, up to five notes;
+- Pluck: higher, less crowded voicings;
+- Heavy: power/shell voicings with reduced low extensions;
+- Bass: root, fifth and octave only.
+
+This affects note placement, not the displayed chord name.
 
 ## Settings
 
-Press Select to open the full-screen Settings menu. D-pad Up/Down selects a row; Left/Right changes the value.
+Select opens the full-screen menu. Up/Down selects a row; Left/Right edits.
 
-Available settings:
-
-1. Base colour palette
-2. L1-held colour palette
-3. Base chord bank
-4. R1-held chord bank
-5. R2-held chord bank
-6. FX1 type
-7. FX1 amount
-8. FX1 colour
-9. FX2 type
-10. FX2 amount
-11. FX2 colour
+1. Base colour
+2. L2 colour
+3. Base bank
+4. R1 bank
+5. R2 bank
+6–11. Base FX1/FX2 settings
 12. Key
 13. Octave
-14. UI motion
-15. Swap L1/L2
-16. Swap R1/R2
+14. Voice Lead
+15. PERF FX
+16. UI Motion
+17. Swap L1/L2
+18. Swap R1/R2
 
-Select closes Settings and saves the current configuration. Start+Select saves and exits.
+Select closes and saves. Start+Select saves and exits.
 
 ## Front octave controls
 
-The glowing front-left and front-right controls change octave down/up. If a chord is held, it is rebuilt immediately in the new octave.
+The glowing buttons change octave within −2…+2. In deterministic mode the sounding notes change by exactly ±12 semitones. A currently held chord is rebuilt immediately.
 
-## Desktop test mapping
+## Desktop mapping
 
-| Keyboard | Handheld action |
+| Keyboard | Brick control |
 | --- | --- |
-| Z / X / A / S | physical B / A / Y / X chord buttons |
+| Z / X / A / S | physical B / A / Y / X |
 | arrows | D-pad |
-| Q hold | L1 |
-| W press | L2 |
+| Q press | L1 mode switch |
+| W hold | L2 alternate layer |
 | E hold | R1 |
 | R hold | R2 |
 | [ / ] | octave down / up |
 | Enter | Start |
 | Space | Select |
 | Esc | exit |
-
-## Diagnostics
-
-`brkchrd.log` records the SDL controller mapping, raw button/axis events and the expected v0.4 roles. Use it together with the two SWAP settings instead of globally remapping Knulli.
