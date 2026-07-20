@@ -97,6 +97,7 @@ struct EffectState {
     std::vector<float> left;
     std::vector<float> right;
     std::size_t position = 0U;
+    std::size_t valid_samples = 0U;
     double lfo = 0.0;
     float ap_l1 = 0.0F;
     float ap_l2 = 0.0F;
@@ -106,10 +107,17 @@ struct EffectState {
     float held_l = 0.0F;
     float held_r = 0.0F;
 
+    bool readable(std::size_t index) const {
+        const std::size_t distance = (position + left.size() - index) % left.size();
+        return distance > 0U && distance <= valid_samples;
+    }
+
+    float read_left(std::size_t index) const { return readable(index) ? left[index] : 0.0F; }
+    float read_right(std::size_t index) const { return readable(index) ? right[index] : 0.0F; }
+
     void reset() {
-        std::fill(left.begin(), left.end(), 0.0F);
-        std::fill(right.begin(), right.end(), 0.0F);
         position = 0U;
+        valid_samples = 0U;
         lfo = 0.0;
         ap_l1 = ap_l2 = ap_r1 = ap_r2 = 0.0F;
         hold = 0;
@@ -317,7 +325,7 @@ struct SynthEngine::Impl {
             const float phase = 0.5F + 0.5F * sine(state.lfo);
             const std::size_t delay = 90U + static_cast<std::size_t>((120.0F + colour * 520.0F) * phase);
             const std::size_t read = (state.position + state.left.size() - std::min(delay, state.left.size() - 1U)) % state.left.size();
-            const float dl = state.left[read]; const float dr = state.right[(read + 67U) % state.right.size()];
+            const float dl = state.read_left(read); const float dr = state.read_right((read + 67U) % state.right.size());
             state.left[state.position] = left; state.right[state.position] = right;
             out_l = left * (1.0F - wet * 0.45F) + dr * wet * 0.55F;
             out_r = right * (1.0F - wet * 0.45F) + dl * wet * 0.55F;
@@ -362,7 +370,7 @@ struct SynthEngine::Impl {
         case EffectType::Delay: {
             const std::size_t length = std::max<std::size_t>(1U, static_cast<std::size_t>(sample_rate * (0.08 + colour * 0.82)));
             const std::size_t read = (state.position + state.left.size() - std::min(length, state.left.size() - 1U)) % state.left.size();
-            const float dl = state.left[read]; const float dr = state.right[read];
+            const float dl = state.read_left(read); const float dr = state.read_right(read);
             const float feedback = 0.18F + amount * 0.62F;
             state.left[state.position] = left + dr * feedback;
             state.right[state.position] = right + dl * feedback;
@@ -372,7 +380,7 @@ struct SynthEngine::Impl {
         case EffectType::Reverb: {
             const std::size_t length = std::max<std::size_t>(1U, static_cast<std::size_t>(sample_rate * (0.16 + colour * 0.70)));
             const std::size_t read = (state.position + state.left.size() - std::min(length, state.left.size() - 1U)) % state.left.size();
-            const float dl = state.left[read]; const float dr = state.right[(read + 953U) % state.right.size()];
+            const float dl = state.read_left(read); const float dr = state.read_right((read + 953U) % state.right.size());
             const float feedback = 0.54F + colour * 0.34F;
             state.left[state.position] = left + dr * feedback;
             state.right[state.position] = right + dl * feedback;
@@ -381,6 +389,9 @@ struct SynthEngine::Impl {
             break;
         }
         case EffectType::Count: break;
+        }
+        if (settings.type == EffectType::Chorus || settings.type == EffectType::Delay || settings.type == EffectType::Reverb) {
+            state.valid_samples = std::min(state.valid_samples + 1U, state.left.size());
         }
         state.position = (state.position + 1U) % state.left.size();
         if (state.lfo >= 1.0) state.lfo -= 1.0;
