@@ -1,6 +1,11 @@
 name: apply-v051
 
 on:
+  push:
+    branches:
+      - agent/brkchrd-alpha
+    paths:
+      - 'tools/v051.trigger'
   workflow_dispatch:
 
 permissions:
@@ -32,7 +37,7 @@ jobs:
       - name: Commit migration
         run: |
           set -euo pipefail
-          rm tools/v051-ui.patch
+          rm tools/v051-ui.patch tools/v051.trigger
           git config user.name myldy20
           git config user.email myldy20@users.noreply.github.com
           git add -A
