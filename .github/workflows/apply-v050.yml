@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'tools/apply_v050.py'
-      - 'tools/apply_v050.trigger'
+      - 'tools/apply_v050.trigger*'
   workflow_dispatch:
 
 permissions:
@@ -24,22 +24,41 @@ jobs:
       - name: Apply and validate BRKCHRD 0.5
         shell: bash
         run: |
-          set -euo pipefail
-          python3 tools/apply_v050.py
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libsdl2-dev
-          cmake -S . -B build-v050 -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-v050 --parallel 2
-          ctest --test-dir build-v050 --output-on-failure
-          set +e
-          BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build-v050/brkchrd-sdl
-          status=$?
-          set -e
-          test "$status" -eq 0 -o "$status" -eq 124
-          build-v050/brkchrd-render brkchrd-v050-demo.wav
+          set -u
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
+          set +e
+          python3 tools/apply_v050.py > /tmp/v050-migration.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/v050-migration.log tools/v050-migration.log
+            git add tools/v050-migration.log
+            git commit -m 'Record BRKCHRD 0.5 migration diagnostics' || true
+            git push origin HEAD:agent/brkchrd-alpha
+            exit "$status"
+          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libsdl2-dev
+          set +e
+          {
+            cmake -S . -B build-v050 -DCMAKE_BUILD_TYPE=Release &&
+            cmake --build build-v050 --parallel 2 &&
+            ctest --test-dir build-v050 --output-on-failure &&
+            sh -c 'BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build-v050/brkchrd-sdl; s=$?; test "$s" -eq 0 -o "$s" -eq 124' &&
+            build-v050/brkchrd-render brkchrd-v050-demo.wav
+          } > /tmp/v050-build.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            tail -n 220 /tmp/v050-build.log > tools/v050-build.log
+            git add tools/v050-build.log
+            git commit -m 'Record BRKCHRD 0.5 build diagnostics' || true
+            git push origin HEAD:agent/brkchrd-alpha
+            exit "$status"
+          fi
+          rm -f tools/v050-migration.log tools/v050-build.log
           git add src/sdl_main.cpp CMakeLists.txt tools/package_portmaster.sh .github/workflows/build.yml
-          git rm tools/apply_v050.py tools/apply_v050.trigger
+          git rm tools/apply_v050.py tools/apply_v050.trigger*
           git commit -m 'Complete BRKCHRD 0.5 smart voicing workflow'
           git push origin HEAD:agent/brkchrd-alpha
