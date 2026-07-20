@@ -5,8 +5,8 @@
   "items_opt": null,
   "attr": {
     "title": "BRKCHRD",
-    "desc": "Live chord-performance synth with configurable colour and degree layers, sound editing, momentary performance FX and automatic voice leading.",
-    "inst": "Verified target: TrimUI Brick with Knulli/PortMaster. L1 selects alternate layers, L2 cycles CHORD/SOUND/PERF FX, R1/R2 select chord banks, Select opens Settings. Configuration and logs are stored under brkchrd/conf.",
+    "desc": "Chord-performance synth with corrected extensions, sixteen musical presets, deterministic or live voice leading and instrument-aware voicings.",
+    "inst": "TrimUI Brick / Knulli. L1 cycles CHORD/SOUND/PERF FX, L2 holds alternate layers, R1/R2 select chord banks and Select opens Settings. VOICE LEAD and PERF FX can be enabled independently.",
     "genres": ["music"],
     "porter": ["myldy20"],
     "image": {},
