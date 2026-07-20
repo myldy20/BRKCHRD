@@ -1,0 +1,114 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libsdl2-dev
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test chord construction and voicing
+        run: ctest --test-dir build --output-on-failure
+      - name: SDL startup smoke test in English
+        run: |
+          set +e
+          BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          status=$?
+          test "$status" -eq 0 -o "$status" -eq 124
+      - name: SDL startup smoke test in Russian and hold-colour mode
+        run: |
+          mkdir -p /tmp/brkchrd-ru
+          printf 'language 1\nchorddpad 1\n' > /tmp/brkchrd-ru/brkchrd.cfg
+          set +e
+          XDG_CONFIG_HOME=/tmp/brkchrd-ru BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          status=$?
+          test "$status" -eq 0 -o "$status" -eq 124
+      - name: Render sixteen-preset demo
+        run: build/brkchrd-render brkchrd-v052-demo.wav
+      - name: Check documentation, localisation, branding and licensing
+        run: |
+          grep -q 'BRKCHRD 0.5.2' docs/manual.en.md
+          grep -q 'BRKCHRD 0.5.2' docs/manual.ru.md
+          grep -q 'LANGUAGE' docs/controls.en.md
+          grep -q 'ЯЗЫК' docs/controls.ru.md
+          grep -q 'CHORD DPAD' docs/controls.en.md
+          grep -q 'DPAD АККОРД' docs/controls.ru.md
+          grep -q 'contributor' docs/hardware-test-checklist.en.md
+          grep -q 'разработчик' docs/hardware-test-checklist.ru.md
+          ! grep -qi 'check.*splash\|verify.*splash' docs/manual.en.md
+          ! grep -qi 'провер.*застав' docs/manual.ru.md
+          grep -q 'Based on BRKCHRD by Myldy design' NOTICE.md
+          grep -q 'GNU GENERAL PUBLIC LICENSE' LICENSE
+          test -f assets/branding/brkchrd-logo.svg
+          test -f assets/branding/brkchrd-banner.jpg
+          test -f packaging/portmaster/brkchrd/screenshot.jpg
+          test -f packaging/nextui/tg5040/.media/BRKCHRD.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-v052-audio-demo
+          path: brkchrd-v052-demo.wav
+
+  aarch64-packages:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package in Ubuntu 20.04 AArch64 container
+        run: |
+          docker run --rm \
+            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
+            bash -ec '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
+              cmake --build build-aarch64 --parallel 2
+              ctest --test-dir build-aarch64 --output-on-failure
+              strip build-aarch64/brkchrd-sdl
+              sh ./tools/package_portmaster.sh build-aarch64 dist
+              sh ./tools/package_nextui.sh build-aarch64 dist
+            '
+      - name: Inspect AArch64 binary
+        run: |
+          file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
+          grep -q 'ARM aarch64' /tmp/binary.txt
+      - name: Inspect PortMaster package
+        run: |
+          file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
+          grep -Eq '640 ?x ?480' /tmp/screenshot.txt
+          unzip -l dist/brkchrd-v0.5.2-portmaster.zip | tee /tmp/portmaster.txt
+          grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
+          grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
+          grep -q 'brkchrd/docs/manual.en.md' /tmp/portmaster.txt
+          grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
+          grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
+      - name: Inspect NextUI package
+        run: |
+          unzip -l dist/brkchrd-v0.5.2-nextui-tg5040.zip | tee /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
+          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-v052-portmaster-aarch64
+          path: dist/brkchrd-v0.5.2-portmaster.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-v052-nextui-tg5040
+          path: dist/brkchrd-v0.5.2-nextui-tg5040.zip
