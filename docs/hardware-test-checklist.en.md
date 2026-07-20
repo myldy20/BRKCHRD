@@ -1,29 +1,36 @@
-# BRKCHRD 0.4.0 Hardware Test Checklist
+# BRKCHRD 0.5.1 Hardware Test Checklist
 
-Automated CI proves that the code builds, starts and packages. This checklist validates the real TrimUI Brick controls, screen, latency, DSP behaviour and thermal stability.
+CI proves that the code builds, starts, renders audio and packages correctly. This checklist validates the real handheld controls, screen, latency, sound balance and stability.
 
 ## 1. Install and launch
 
-- Install `brkchrd-v0.4.0-portmaster.zip` into `/userdata/roms/ports/`.
-- Confirm `BRKCHRD.sh` and `brkchrd-sdl.aarch64` are executable.
-- Launch **Ports → BRKCHRD**.
-- Confirm the header shows `V0.4.0` and `CHORD`.
-- Confirm ABXY plays immediately.
+- install the 0.5.1 PortMaster or NextUI package;
+- verify executable permissions;
+- confirm the two-second BRKCHRD / Myldy design splash;
+- confirm the header reports 0.5.1;
+- confirm ABXY produces sound immediately.
 
-## 2. Layout and typography
+## 2. 0.5.1 interface corrections
 
-Check CHORD, SOUND, PERF FX and Settings.
+Open SOUND normal layer:
 
-- Left and right performance panels remain equal.
-- All eight directional cells plus the centre cell are equal.
-- All four chord buttons are equal and match physical X/Y/A/B positions.
-- Long preset/effect names stay inside fields.
-- Microtext remains compact and readable.
-- Footer labels do not overlap.
-- Toast messages remain inside their box.
-- FULL, LOW and OFF UI motion do not leave stale pixels.
+- every factory preset name stays inside the dedicated 52-pixel card;
+- the name is clearly larger than parameter text;
+- Tone, Body and Motion values have visible right padding;
+- selected Tone, Body or Motion keeps a white bar;
+- the character line does not overlap the last parameter.
 
-Photograph any overlap and record the active D-pad mode and L1 state.
+Open SOUND with L2 held:
+
+- Attack, Release and Spread bars remain visible when selected;
+- BPM and Play Mode remain inside the right boundary.
+
+Open Settings:
+
+- all values have right padding;
+- no value touches or crosses the frame;
+- footer reads `START+SELECT: SAVE AND EXIT` with no missing glyph;
+- scrolling reaches all 18 rows.
 
 ## 3. Physical face buttons
 
@@ -35,137 +42,147 @@ Y = vi          A = V
         B = I
 ```
 
-Test each position in CORE, DIATONIC+ and BORROWED. The matching screen button must highlight. Test fast patterns and simultaneous transitions; no notes should stick.
+Test every position in CORE, DIATONIC+ and BORROWED. Screen highlight and sounding degree must match the physical position. Fast transitions must not leave stuck notes.
 
 ## 4. Front octave controls
+
+With Voice Lead Off:
 
 - front-left lowers octave;
 - front-right raises octave;
 - limits are −2 and +2;
-- a held chord rebuilds immediately;
-- no bank, palette or D-pad mode changes.
+- the same held chord rebuilds immediately;
+- every voice changes exactly twelve semitones;
+- bank, colour and D-pad screen remain unchanged.
 
-## 5. L1 and L2 identity
+Repeat with Voice Lead On and confirm the result stays near the requested register.
 
-With both SWAP options Off:
+## 5. L1 and L2
 
-- hold L1 in CHORD: alternate palette appears only while held;
-- release L1: default palette returns;
-- press L2: header advances CHORD → SOUND → PERF FX → CHORD;
-- holding L2 must not repeatedly skip modes.
+With `SWAP L1/L2 = OFF`:
 
-If the two physical buttons are reversed, enable `SWAP L1/L2` and repeat. Confirm the new order persists after restart.
+- press L1: CHORD → SOUND → PERF FX → CHORD;
+- hold L2 in CHORD: alternate palette appears only while held;
+- hold L2 in SOUND: Attack/Release/Spread/BPM/Play Mode appear;
+- hold L2 in PERF FX: alternate gesture bank appears.
 
-## 6. CHORD colour persistence
+If the physical order is reversed, enable `SWAP L1/L2` and repeat. The setting must persist after restart.
 
-Configure BASE COLOUR = CLASSIC and L1 COLOUR = DARK.
+## 6. Chord colour persistence
 
-- select maj7 in CLASSIC;
-- hold and release L1 without selecting anything: maj7 remains active;
-- enter SOUND: every chord remains maj7;
-- enter PERF FX: every chord remains maj7;
-- return to CHORD: the active status still shows maj7;
-- hold L1, select POWER, release L1: POWER remains active;
-- hold L1 and press the POWER direction again: BASE returns.
+- select a CLASSIC colour;
+- enter SOUND and PERF FX: the colour remains active;
+- hold/release L2 without selecting: the colour does not change;
+- select a colour from the L2 palette: it remains after L2 is released;
+- display the same palette and press the same direction again: BASE returns.
 
-Repeat with EXTENDED as either layer.
+## 7. Deterministic and live voicing
 
-## 7. SOUND normal layer
+Voice Lead Off:
 
-Without L1 held:
+- play the same face button after different routes through ABXY;
+- MIDI/register result must remain identical;
+- repeat for several presets and banks.
+
+Voice Lead On:
+
+- different routes may create different inversions;
+- no result should jump outside a reasonable range around the selected octave;
+- Bass remains root/fifth/octave;
+- Heavy avoids dense low extensions.
+
+## 8. SOUND editing
+
+Normal layer:
 
 - Up/Down selects Preset, Tone, Body and Motion;
 - Left/Right edits;
 - held Left/Right accelerates;
-- ABXY continues to play;
-- R1/R2 bank changes continue to work;
-- chord colour never resets.
+- ABXY and R1/R2 remain active;
+- changing preset immediately updates its voicing profile and level.
 
-## 8. SOUND L1 layer
+L2 layer:
 
-Hold L1:
+- separate row memory is preserved;
+- Attack, Release, Spread, BPM and Play Mode edit correctly;
+- BPM changes ARP/PULSE timing;
+- releasing L2 returns to the normal layer without losing edits.
 
-- panel changes to Attack, Release, Spread, BPM and Play Mode;
-- Up/Down keeps a separate row position from the normal layer;
-- Left/Right edits correctly;
-- releasing L1 returns to the normal bank without losing edits;
-- changing BPM affects ARP/PULSE timing.
+## 9. R1/R2 banks
 
-## 9. R1 and R2 banks
+Assign CORE, DIATONIC+ and BORROWED to base/R1/R2.
 
-Configure BASE BANK = CORE, R1 BANK = DIATONIC+, R2 BANK = BORROWED.
+- R1 and R2 change labels and notes only while held;
+- R2 has priority when both are held;
+- a held chord rebuilds cleanly;
+- `SWAP R1/R2` corrects reversed firmware order and persists.
 
-- hold R1: all ABXY labels and sounds change to DIATONIC+;
-- release R1: CORE returns;
-- hold R2: BORROWED appears;
-- release R2: CORE returns;
-- change R1/R2 while a chord is held: the chord rebuilds without a stuck old voice;
-- if physical order is wrong, enable `SWAP R1/R2` and repeat.
+## 10. PERF FX
 
-## 10. PERF FX normal bank
+With PERF FX On:
 
-Enter PERF FX with L1 released. Test all eight directions:
+- test all eight normal and eight L2 gestures;
+- effect is active only while a direction is held;
+- moving between directions updates immediately;
+- centre restores FX1/FX2;
+- opening Settings, leaving the screen or disabling PERF FX restores FX1/FX2;
+- fast gestures do not leave a stuck effect.
 
-- effect starts only while direction is held;
-- moving between directions changes immediately;
-- returning to centre restores both base FX slots;
-- ABXY remains responsive;
-- repeated fast gestures do not leave a stuck effect;
-- base effect settings displayed in Settings remain unchanged.
+With PERF FX Off:
 
-Listen specifically to Reverse-ish, Stutter, Chop, Crush, Drive, Wash, Deep Echo and Phase.
+- L1 cycles CHORD ↔ SOUND only;
+- ordinary FX1/FX2 continue to work.
 
-## 11. PERF FX L1 bank
+## 11. Settings and persistence
 
-Hold L1 and test all eight alternate gestures: Abyss, Ratetrap, Glitch, Broken, Doom, Shimmer-ish, Tunnel and Alien.
+- edit both palettes, all banks, FX1/FX2, key, octave, Voice Lead, PERF FX, UI Motion and swaps;
+- close Settings and restart;
+- every value is restored;
+- Start+Select saves and exits;
+- config survives a package upgrade.
 
-- L1 changes the bank while a D-pad direction is held;
-- releasing L1 returns to the normal performance bank;
-- releasing D-pad restores base effects;
-- opening Settings while a gesture is active restores base effects;
-- pressing L2 while active restores base effects before changing mode.
+## 12. Sixteen presets
 
-## 12. Settings
+Test BASE, a seventh and one wide extension on all presets through:
 
-Press Select.
+- built-in speaker;
+- headphones;
+- external output where available.
 
-- Settings opens instead of toggling latch.
-- Up/Down reaches all 16 rows.
-- Left/Right edits palettes, banks, both base FX, key, octave, UI motion and swaps.
-- ABXY remains playable.
-- Select closes and saves.
-- Restart restores every edited value.
-- Old latch state never returns.
+Record harshness, weak fundamentals, level jumps, mud, excessive stereo spread or ineffective parameters. Pay special attention to Doom Chords, Sub Altar, Frozen Glass and the choir patches.
 
-## 13. Start behaviour
-
-- tap Start: PAD → STRUM → ARP → PULSE;
-- hold Start about 0.85 seconds: `ALL NOTES OFF` appears and every voice stops;
-- releasing after a long hold must not also change play mode;
-- Start + Select saves and exits.
-
-## 14. Sound engines and base FX
-
-With base FX Off, compare all ten engines on one chord and octave. Record redundant, weak or unpleasant parameter ranges.
-
-Then test every base effect type separately and in series. Check tails, level jumps, crackles, stereo collapse and speaker/headphone differences.
-
-## 15. Latency and stability
+## 13. Latency and stability
 
 - estimate button-to-sound latency with headphones;
-- play rapid short chords in PAD and STRUM;
-- run ARP/PULSE for at least five minutes;
-- perform repeated PERF FX gestures for at least five minutes;
-- leave the application running for at least 15 minutes;
-- watch CPU, memory, heat, battery drain, underruns and increasing latency;
-- test suspend/resume if practical;
-- verify exit silences audio and returns to Knulli.
+- play rapid PAD and STRUM patterns;
+- run ARP and PULSE for at least five minutes;
+- perform repeated PERF FX gestures for five minutes;
+- leave the application running for at least fifteen minutes;
+- observe CPU, memory, temperature, battery drain, underruns and increasing latency;
+- test suspend/resume where practical;
+- confirm exit silences audio and returns to the frontend.
 
-## 16. Files to collect
+## 14. Branding and package integration
+
+PortMaster:
+
+- game entry displays the BRKCHRD cover;
+- `screenshot.jpg` is 640×480;
+- package includes GPL, NOTICE and RU/EN docs.
+
+NextUI:
+
+- Tools card displays `.media/BRKCHRD.png`;
+- configuration is stored outside the Pak;
+- replacing the Pak preserves settings.
+
+## 15. Files to collect
+
+PortMaster:
 
 ```bash
-scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.log ~/Downloads/brkchrd-v040.log
-scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.cfg ~/Downloads/brkchrd-v040.cfg
+scp root@DEVICE_IP:/userdata/roms/ports/brkchrd/conf/brkchrd.log ./
+scp root@DEVICE_IP:/userdata/roms/ports/brkchrd/conf/brkchrd.cfg ./
 ```
 
-Report BRKCHRD/Knulli versions, physical control, SWAP settings, D-pad mode, L1/R1/R2 state, stored chord colour, engine, base FX, speaker/headphones, latency/CPU and a short video for control or layout issues.
+For an issue, include device, firmware/frontend version, exact archive, control sequence, Voice Lead/PERF FX state, preset, chord, output route, observed CPU/latency and photo/video for UI defects.
