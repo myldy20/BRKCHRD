@@ -1,108 +1,132 @@
-# Architecture — English
+# BRKCHRD 0.4.0 Architecture — English
 
 ## Modules
 
 ```text
-music.cpp      functional chord banks, colours and voice leading
-synth.cpp      polyphonic voices, ten synthesis models, play modes and FX
-sdl_main.cpp   Brick input routing, dual-panel UI, persistence, diagnostics and SDL bridge
+music.cpp      functional chord banks, colour definitions and voice leading
+synth.cpp      voices, ten synthesis models, play modes and effect algorithms
+sdl_main.cpp   Brick input routing, performance state, UI, persistence and SDL bridge
 ```
 
-The core does not depend on SDL2. Unit tests and offline WAV rendering therefore work without the handheld frontend.
+The harmony/audio core remains independent from SDL2, allowing unit tests and offline WAV rendering without the handheld frontend.
+
+## Independent performance state
+
+Version 0.4 separates musical state from the view currently controlled by the D-pad:
+
+```text
+stored chord colour  ───────────────┐
+active base/R1/R2 bank ─────────────┼→ ChordSpec → voice leading → notes
+physical ABXY position ─────────────┘
+
+D-pad mode = CHORD | SOUND | PERF FX
+```
+
+Changing to SOUND or PERF FX therefore does not alter the stored chord colour. The colour changes only through CHORD-mode selection.
 
 ## Harmony path
 
 ```text
 physical face position
-  + persistent chord bank
-  + persistent palette
-  + armed or temporarily held D-pad direction
-      → ChordSpec (root, intervals, name, degree, modifier)
+  + active momentary bank (R2 > R1 > base)
+  + stored colour palette/direction
+      → ChordSpec
       → inversion search / nearest voice-leading candidate
       → MIDI-note vector
 ```
 
-The face-button translation is deliberately positional. Knulli's SDL mapping follows an Xbox-style semantic layout, while the Brick caps use Nintendo-style labels. BRKCHRD converts SDL positions back to the physical `X / Y / A / B` labels before presenting them to the user.
+Knulli reports Xbox-style SDL face positions while the Brick uses different printed letters. BRKCHRD translates by physical position before drawing labels.
 
-Voice leading evaluates inversions and octave shifts against the previous chord. It minimises squared pitch movement and adds a small centre-of-register penalty.
+## Rear-control routing
+
+The confirmed mapping is handled explicitly:
+
+- front left/right shoulders: octave down/up;
+- left-stick button: physical rear L1;
+- left trigger: physical rear L2;
+- right-stick button: physical rear R1;
+- right trigger: physical rear R2.
+
+Settings contain two logical swap flags. They exchange L1/L2 or R1/R2 roles without changing the global controller mapping.
+
+### L1
+
+L1 is a momentary layer flag interpreted by the active D-pad mode:
+
+- CHORD: alternate palette display/selection;
+- SOUND: alternate parameter bank;
+- PERF FX: alternate performance-effect bank.
+
+### L2
+
+L2 is edge-triggered and cycles the D-pad state machine:
+
+```text
+CHORD → SOUND → PERF FX → CHORD
+```
+
+### R1/R2
+
+R1 and R2 are independent momentary bank flags. Priority is R2, then R1, then the base bank. A sounding chord is rebuilt when either flag changes.
+
+## Performance FX transaction
+
+Momentary performance FX use a snapshot/restore transaction:
+
+1. First non-centred D-pad direction snapshots FX1 and FX2.
+2. The chosen direction and L1 layer generate a temporary effect pair.
+3. Moving the D-pad replaces that pair.
+4. Returning to centre restores the snapshot.
+5. Leaving PERF FX, opening Settings or exiting also restores the snapshot.
+
+This keeps destructive live gestures separate from the saved base chain.
 
 ## Audio path
 
 ```text
 note vector
   → 24-voice allocator
-  → model-specific oscillator / excitation
-  → shared state-variable body filter
-  → stereo pan / spread
-  → FX slot 1
-  → FX slot 2
-  → master gain and soft clipping
+  → model-specific oscillator/excitation
+  → body filter and stereo spread
+  → FX1
+  → FX2
+  → master soft clipping
   → 48 kHz float stereo SDL callback
 ```
 
-No allocation occurs in the per-sample loop. The audio callback is protected by a mutex shared with UI edits. This is simple and deterministic at the current project scale; a future version may use a lock-free command queue if physical profiling justifies it.
+No allocation occurs inside the per-sample loop. UI edits and the audio callback currently use the existing mutex-based synchronisation.
 
-## Dual-panel UI state
+## UI structure
 
-The 512×384 logical canvas is split into two equal 238-pixel panels plus fixed header and footer regions.
+The 512×384 logical canvas retains a fixed header, two equal performance panels and footer.
 
-```text
-left panel                           right panel
-CLASSIC / EXTENDED / DARK            CORE / DIATONIC+ / BORROWED
-SOUND                                FX 1
-SYSTEM                               FX 2
-                                     MASTER
-```
-
-The last rear side pressed owns D-pad focus. Focus is a separate state from the active chord bank and palette, so editing an effect does not alter the current harmony setup.
-
-All panel geometry uses fixed rectangles and clipped labels. Large chord labels use the original 5×7 font at scale 2–3; microtext uses scale 1 with zero extra tracking to avoid the loose appearance of the original alpha interface.
-
-## Input routing
-
-The mapping observed on TrimUI Brick with Knulli is handled explicitly:
-
-- `SDL_CONTROLLER_BUTTON_LEFTSHOULDER` / `RIGHTSHOULDER`: glowing front octave controls;
-- `SDL_CONTROLLER_BUTTON_LEFTSTICK` and left trigger axis: rear-left channel;
-- `SDL_CONTROLLER_BUTTON_RIGHTSTICK` and right trigger axis: rear-right channel;
-- SDL face-button positions: translated to physical Brick cap labels.
-
-Rear L1/L2 therefore share the left-panel action, and rear R1/R2 share the right-panel action. Duplicate trigger/button events are edge-filtered through the stored input state.
-
-The first controller events and raw joystick events are logged with a fixed event budget. This provides firmware diagnostics without creating an unbounded log file.
-
-## Reactive rendering
-
-Visual motion is derived from time, output peak and current interaction state:
-
-- background depth grid;
-- focused-panel glow;
-- active chord pulse;
-- output meter;
-- effect-response curve;
-- current chord and mode status.
-
-`UI MOTION` selects OFF, LOW or FULL. Rendering state is read-only with respect to the audio graph.
+- left panel follows CHORD, SOUND or PERF FX;
+- right panel always shows the playable chord diamond and active bank;
+- Settings is a full-screen overlay;
+- labels use fixed geometry and clipping;
+- animation derives from time, output peak and current interaction state.
 
 ## Persistence
 
-`brkchrd.cfg` is a readable key/value file. It stores:
+`brkchrd.cfg` stores:
 
 - key and octave;
-- selected left and right panel modes;
-- active bank, palette and armed direction;
-- preset, BPM, play mode and latch;
-- all seven synth parameters;
-- both FX slots;
-- UI motion level.
+- default and L1-held palettes;
+- stored chord palette/direction;
+- base, R1-held and R2-held banks;
+- D-pad mode;
+- preset, BPM, play mode and all synth macros;
+- base FX1 and FX2;
+- UI motion;
+- left/right rear swap flags.
 
-Unknown keys are ignored for forward compatibility.
+Legacy latch is read only for compatibility and forced off.
 
 ## Performance targets
 
-- logical UI: 512×384 scaled exactly to 1024×768;
+- logical UI: 512×384 scaled to 1024×768;
 - audio: 48 kHz stereo float, requested 512-frame buffer;
 - maximum voices: 24;
-- effect memory: two preallocated stereo circular buffers;
-- no per-frame texture allocation;
+- two preallocated effect buffers;
+- bounded controller-event logging;
 - target: TrimUI Brick AArch64 / Knulli Scarab.
