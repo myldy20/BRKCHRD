@@ -1,0 +1,70 @@
+_palette == palette && ui.selected_direction == d;
+        draw_cell(r, px, py, cw, ch, direction_label(palette, d), active, false, accent);
+    }
+    const int cx = gx + cw + gap, cy = gy + ch + gap;
+    const bool base = ui.selected_direction == Direction::Center;
+    draw_cell(r, cx, cy, cw, ch, "BASE", base, false, accent);
+
+    const std::string selected = ui.selected_direction == Direction::Center
+        ? "ACTIVE: BASE"
+        : "ACTIVE: " + palette_name(ui.selected_palette) + " / " + direction_label(ui.selected_palette, ui.selected_direction);
+    micro(r, x + w / 2, y + h - 18, fit(selected, 43), kInk, true);
+}
+
+void parameter_row(SDL_Renderer* r, int x, int y, int w, const std::string& name,
+                   const std::string& value, bool active, Colour accent, float amount = -1.0F) {
+    rect(r, x, y, w, 36, active ? accent : kPanel2);
+    outline(r, x, y, w, 36, active ? kWhite : alpha(accent, 120));
+    text(r, x + 9, y + 7, fit(name, 18), 1, active ? kBg : kInk, false, 0);
+    text(r, x + w - 9, y + 7, fit(value, 17), 1, active ? kBg : kDim, true, 0);
+    if (amount >= 0.0F) bar(r, x + 9, y + 25, w - 18, amount, active ? kBg : accent);
+}
+
+void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
+                     const InputState& in, const SynthEngine& synth) {
+    constexpr int x = 12, y = 46, w = 238, h = 286;
+    const int layer = in.l1 ? 1 : 0;
+    panel_frame(r, x, y, w, h, kOrange);
+    text(r, x + 12, y + 10, "SOUND", 2, kOrange);
+    micro(r, x + w - 12, y + 14, layer == 0 ? "L1: ENV" : "L1 HELD", layer == 1 ? kWhite : kDim, true);
+    micro(r, x + 12, y + 35, layer == 0 ? "ENGINE / TONE BANK" : "ENVELOPE / TIME BANK", kDim);
+
+    const int row = ui.sound_row[static_cast<std::size_t>(layer)];
+    if (layer == 0) {
+        const auto info = synth.preset_info();
+        const std::array<std::string, 4> names{"PRESET", "TONE", "BODY", "MOTION"};
+        const std::array<std::string, 4> values{info.name, percent(synth.parameter(SynthParameter::Tone)),
+            percent(synth.parameter(SynthParameter::Body)), percent(synth.parameter(SynthParameter::Motion))};
+        const std::array<float, 4> bars{-1.0F, synth.parameter(SynthParameter::Tone), synth.parameter(SynthParameter::Body), synth.parameter(SynthParameter::Motion)};
+        for (int i = 0; i < 4; ++i) parameter_row(r, x + 10, y + 58 + i * 48, w - 20, names[static_cast<std::size_t>(i)], values[static_cast<std::size_t>(i)], i == row, kOrange, bars[static_cast<std::size_t>(i)]);
+        micro(r, x + 12, y + h - 19, fit(info.character, 42), kDim);
+    } else {
+        const std::array<std::string, 5> names{"ATTACK", "RELEASE", "SPREAD", "BPM", "PLAY MODE"};
+        const std::array<std::string, 5> values{percent(synth.parameter(SynthParameter::Attack)), percent(synth.parameter(SynthParameter::Release)),
+            percent(synth.parameter(SynthParameter::Spread)), std::to_string(p.bpm), mode_name(p.mode)};
+        const std::array<float, 5> bars{synth.parameter(SynthParameter::Attack), synth.parameter(SynthParameter::Release), synth.parameter(SynthParameter::Spread), -1.0F, -1.0F};
+        for (int i = 0; i < 5; ++i) parameter_row(r, x + 10, y + 54 + i * 43, w - 20, names[static_cast<std::size_t>(i)], values[static_cast<std::size_t>(i)], i == row, kOrange, bars[static_cast<std::size_t>(i)]);
+    }
+}
+
+const std::array<std::string, 8> kFxBankA{"REVERSE-ish", "STUTTER", "CHOP", "CRUSH", "DRIVE", "WASH", "DEEP ECHO", "PHASE"};
+const std::array<std::string, 8> kFxBankB{"ABYSS", "RATETRAP", "GLITCH", "BROKEN", "DOOM", "SHIMMER-ish", "TUNNEL", "ALIEN"};
+
+int direction_index(Direction d) {
+    switch (d) {
+    case Direction::UpLeft: return 0; case Direction::Up: return 1; case Direction::UpRight: return 2; case Direction::Right: return 3;
+    case Direction::DownRight: return 4; case Direction::Down: return 5; case Direction::DownLeft: return 6; case Direction::Left: return 7;
+    case Direction::Center: break;
+    }
+    return -1;
+}
+
+void draw_fx_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
+    constexpr int x = 12, y = 46, w = 238, h = 286;
+    const int layer = in.l1 ? 1 : 0;
+    const auto& names = layer == 0 ? kFxBankA : kFxBankB;
+    panel_frame(r, x, y, w, h, kTeal);
+    text(r, x + 12, y + 10, "PERF FX", 2, kTeal);
+    micro(r, x + w - 12, y + 14, layer == 0 ? "L1: ALT" : "L1 HELD", layer == 1 ? kWhite : kDim, true);
+    micro(r, x + 12, y + 35, "HOLD DPAD / RELEASE RESTORES", kDim);
+    con
