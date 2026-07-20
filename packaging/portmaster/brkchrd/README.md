@@ -17,6 +17,8 @@ TrimUI Brick controls:
 
 Settings configure the default/L1 colour palettes, base/R1/R2 chord banks, two base effect slots, key, octave, UI motion and rear-button swaps.
 
+PERF FX temporarily replaces the two base effects only while the D-pad is held. Releasing the D-pad, changing mode or opening Settings restores the saved base chain.
+
 Runtime files:
 
 ```text
