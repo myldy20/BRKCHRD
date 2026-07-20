@@ -82,6 +82,14 @@ R1 and R2 are momentary. Each can be assigned CORE, DIATONIC+ or BORROWED. If bo
 - Select: close and save;
 - Start+Select: save and exit.
 
+Important switches:
+
+- `VOICE LEAD = OFF`: deterministic notes and exact octave changes;
+- `VOICE LEAD = ON`: route-sensitive nearby inversions anchored to the selected octave;
+- `PERF FX = OFF`: remove PERF FX from the L1 cycle without disabling FX1/FX2;
+- `UI MOTION`: Off, Low or Full animation;
+- `SWAP L1/L2` and `SWAP R1/R2`: local correction for firmware button order.
+
 All values are right-aligned with safe frame padding in 0.5.1.
 
 ## Desktop test mapping
