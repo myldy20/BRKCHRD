@@ -1,143 +1,65 @@
+<p align="center">
+  <img src="assets/branding/brkchrd-banner.jpg" width="900" alt="BRKCHRD — chord-performance instrument for TrimUI Brick">
+</p>
+
 # BRKCHRD
 
-**BRKCHRD** is an open-source chord-performance instrument for TrimUI Brick. Four face buttons play functional chords while the D-pad selects chord colours, edits the synth or performs momentary effects.
+<p align="center">
+  <strong>A playable harmony instrument for TrimUI Brick.</strong><br>
+  Functional chords, instrument-aware voicings, sixteen synthesis presets and live performance FX without a laptop.
+</p>
 
-Current version: **0.5.0 smart voicing preview**.
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.5.1-f1e3c5?labelColor=111514">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-TrimUI%20Brick-8f8699?labelColor=111514">
+  <img alt="Architectures" src="https://img.shields.io/badge/arch-aarch64-8f8699?labelColor=111514">
+  <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0--or--later-8f8699?labelColor=111514">
+</p>
 
-**English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [Architecture](docs/architecture.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Hardware test](docs/hardware-test-checklist.en.md)
+**English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [NextUI](docs/install.nextui.en.md) · [Architecture](docs/architecture.en.md) · [Development](docs/development.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Licensing](docs/licensing.en.md)
 
-**Русский:** [Руководство](docs/manual.ru.md) · [Управление](docs/controls.ru.md) · [Звуковой движок](docs/sound-design.ru.md) · [Установка](docs/install.ru.md) · [Архитектура](docs/architecture.ru.md) · [Диагностика](docs/troubleshooting.ru.md) · [Аппаратный тест](docs/hardware-test-checklist.ru.md)
+**Русский:** [Руководство](docs/manual.ru.md) · [Управление](docs/controls.ru.md) · [Звуковой движок](docs/sound-design.ru.md) · [Установка](docs/install.ru.md) · [NextUI](docs/install.nextui.ru.md) · [Архитектура](docs/architecture.ru.md) · [Разработка](docs/development.ru.md) · [Диагностика](docs/troubleshooting.ru.md) · [Лицензирование](docs/licensing.ru.md)
 
-## What changed in 0.5
+---
 
-Version 0.5 addresses two musical problems found on the physical Brick:
+## English
 
-1. the old voice-leading algorithm let the order of ABXY presses move the same chord into different octaves and could partially cancel an explicit octave change;
-2. every synth received the same dense voicing, so low or distorted instruments could turn extended chords into mud and dissonant output.
+BRKCHRD turns the four face buttons into a coherent chord instrument. The default bank provides the core progression functions; R1 and R2 temporarily expose alternative banks, while the D-pad selects harmonic colour, edits the current sound or performs momentary effects.
 
-### Stable or live voicing
+### What makes it different
 
-`VOICE LEAD` is now a separate setting.
+- **Playable harmony rather than a chord encyclopedia.** The banks are arranged for performance and songwriting.
+- **Deterministic or expressive voicing.** `VOICE LEAD = OFF` always returns the same notes for the same button; `ON` enables route-sensitive nearby inversions without ignoring the selected octave.
+- **Instrument-aware orchestration.** Pads can use wide five-note voicings, while bass and heavy presets automatically avoid dense low extensions.
+- **Sixteen factory sounds.** Keys, pads, organ, strings, choir, plucks, reeds, glass, heavy and sub-oriented patches use distinct synthesis paths.
+- **Two installation formats.** PortMaster/Knulli and a native NextUI Pak for `tg5040` devices.
 
-- **OFF — default:** one button, bank, colour and octave always produce the same notes. Changing octave moves the complete voicing by exactly 12 semitones.
-- **ON:** BRKCHRD searches nearby inversions based on the previous chord, preserving the expressive clockwise/counter-clockwise behaviour. The search is now anchored to the selected octave and cannot freely drag the chord back into the old register.
-
-### Instrument-aware chord spacing
-
-Each factory preset declares a voicing profile:
-
-- Keys and Organ use clear four-note shell voicings;
-- Pad and Choir can use wider five-note voicings;
-- Pluck raises the useful register and removes unnecessary inner notes;
-- Heavy keeps power/shell information instead of stacking dense low extensions;
-- Bass reduces chords to root, fifth and octave.
-
-Chord construction is also quality-aware. Minor and diminished scale degrees now receive appropriate minor, half-diminished or diminished extensions rather than forced major structures.
-
-## Sixteen factory sounds
-
-The factory set was rebuilt for chord playing:
-
-1. Amber Keys
-2. Analog Bloom
-3. Moon Organ
-4. Cinema Strings
-5. Velvet Choir
-6. Muted Pluck
-7. Glass Harp
-8. Noir Reed
-9. Dust Piano
-10. String Haze
-11. Chapel Air
-12. Tape Choir
-13. Doom Chords
-14. Sub Altar
-15. Frozen Glass
-16. Wire Pluck
-
-The new patches use less aggressive FM/noise/detune, individual output compensation and chord-count normalisation. Doom Chords and Sub Altar deliberately simplify dense extensions to keep the low end usable.
-
-## Performance controls
+### Main controls
 
 | Control | Action |
 | --- | --- |
-| glowing front left/right | octave down/up |
-| **L1 press** | cycle `CHORD → SOUND → PERF FX` |
-| **L2 hold** | alternate palette, sound bank or PERF FX bank |
-| R1/R2 hold | configured alternate chord banks |
-| D-pad | chord colour, sound editing or momentary performance FX |
-| ABXY | play functional chords |
-| Select | open/close Settings |
+| Front illuminated left/right | Octave down/up |
+| L1 press | Cycle `CHORD → SOUND → PERF FX` |
+| L2 hold | Alternate colour, sound or PERF FX layer |
+| R1 / R2 hold | Temporary alternate chord banks |
+| D-pad | Harmonic colour, sound editing or momentary FX |
+| ABXY | Play the active functional chord set |
+| Select | Settings |
 | Start tap | PAD / STRUM / ARP / PULSE |
-| Start hold | all notes off |
-| Start + Select | save and exit |
+| Start hold | All notes off |
+| Start + Select | Save and exit |
 
-The old L1/L2 duties have been exchanged. `SWAP L1/L2` remains available for firmware/controller-order differences.
+`PERF FX` can be disabled in Settings. When disabled, L1 cycles only between CHORD and SOUND.
 
-## D-pad modes
+### 0.5.1 interface polish
 
-### CHORD
+- preset names use a dedicated larger two-line-height card and remain inside the SOUND panel;
+- percentages and other values are right-aligned with safe padding from the frame;
+- the selected parameter keeps a clearly visible white value bar;
+- Settings displays `START+SELECT: SAVE AND EXIT` correctly;
+- official artwork is included in the repository, PortMaster package and NextUI card.
 
-D-pad stores a chord colour. L2 held exposes the configured alternate palette. The selected colour remains active while SOUND, PERF FX or Settings is open.
-
-### SOUND
-
-Up/Down selects a parameter and Left/Right edits it.
-
-Normal layer: Preset, Tone, Body and Motion.
-
-L2-held layer: Attack, Release, Spread, BPM and Play Mode.
-
-### PERF FX
-
-Holding a D-pad direction temporarily substitutes a two-effect performance gesture. Releasing the direction restores the saved base FX. L2 held selects the second performance bank.
-
-`PERF FX` can be disabled in Settings. When disabled, L1 cycles only `CHORD ↔ SOUND`, and a previously saved PERF FX screen is replaced by CHORD on startup.
-
-## Settings
-
-The Select menu includes:
-
-- base and L2-held colour palettes;
-- base, R1 and R2 chord banks;
-- both base FX slots;
-- key and octave;
-- `VOICE LEAD` On/Off;
-- `PERF FX` On/Off;
-- UI motion;
-- rear-button swap options.
-
-Only one output meter remains: the compact meter in the top-right corner.
-
-## Startup
-
-Every normal launch shows a two-second splash:
-
-```text
-BRKCHRD
-developed by myldy design
-@myldy20
-```
-
-Automated headless tests skip the delay through `BRKCHRD_SKIP_SPLASH=1`.
-
-## Install on Knulli / PortMaster
-
-Download `brkchrd-v050-portmaster-aarch64` from a successful workflow run and extract the inner archive into `/userdata/roms/ports/`.
-
-```text
-/userdata/roms/ports/BRKCHRD.sh
-/userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
-```
-
-Runtime files:
-
-```text
-/userdata/roms/ports/brkchrd/conf/brkchrd.cfg
-/userdata/roms/ports/brkchrd/conf/brkchrd.log
-```
-
-## Build
+### Build
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -146,4 +68,53 @@ ctest --test-dir build --output-on-failure
 ./build/brkchrd-sdl
 ```
 
-BRKCHRD is GPL-3.0-or-later software developed by **Myldy design** — [@myldy20](https://github.com/myldy20).
+See [Development](docs/development.en.md) for architecture, packaging, tests and contribution rules.
+
+---
+
+## Русский
+
+BRKCHRD превращает четыре лицевые кнопки в цельный гармонический инструмент. Основной банк содержит базовые функции тональности; R1 и R2 временно открывают дополнительные банки, а крестовина выбирает окраску аккорда, редактирует звук или управляет моментальными сценическими эффектами.
+
+### В чём идея
+
+- **Не справочник аккордов, а инструмент для игры.** Банки организованы вокруг музыкальных функций и удобных переходов.
+- **Стабильные или живые раскладки.** При `VOICE LEAD = OFF` одна кнопка всегда выдаёт одинаковые ноты. При `ON` порядок переходов влияет на инверсии, но выбранная октава сохраняет смысл.
+- **Раскладка зависит от тембра.** Пэды получают широкие аккорды, а басовые и перегруженные пресеты не забиваются плотными низкими расширениями.
+- **Шестнадцать заводских звуков.** Клавишные, пэды, орган, струнные, хор, щипковые, язычковые, стеклянные, тяжёлые и сабовые тембры используют разные методы синтеза.
+- **Два варианта установки.** PortMaster/Knulli и нативный NextUI Pak для платформы `tg5040`.
+
+### Главное управление
+
+| Кнопка | Действие |
+| --- | --- |
+| Передние светящиеся слева/справа | Октава вниз/вверх |
+| L1 нажатием | `CHORD → SOUND → PERF FX` |
+| L2 удержанием | Альтернативный слой текущего режима |
+| R1 / R2 удержанием | Временные дополнительные банки аккордов |
+| Крестовина | Окраска, редактирование звука или моментальные FX |
+| ABXY | Игра аккордов активного банка |
+| Select | Настройки |
+| Start коротко | PAD / STRUM / ARP / PULSE |
+| Start долго | Снять все ноты |
+| Start + Select | Сохранить и выйти |
+
+Режим `PERF FX` можно отключить. Тогда L1 переключает только CHORD и SOUND.
+
+### Что исправлено в 0.5.1
+
+- название пресета вынесено в отдельную крупную карточку и больше не вылезает за рамку;
+- проценты и остальные значения выровнены справа с нормальным отступом;
+- шкала выбранного параметра больше не исчезает;
+- внизу Settings корректно написано `START+SELECT: SAVE AND EXIT`;
+- фирменный логотип добавлен в репозиторий, PortMaster и карточку NextUI.
+
+## License / Лицензия
+
+BRKCHRD is licensed under **GNU GPL-3.0-or-later**. Modified distributions must preserve the origin notice described in [`NOTICE.md`](NOTICE.md):
+
+> Based on BRKCHRD by Myldy design — https://github.com/myldy20/BRKCHRD
+
+BRKCHRD распространяется по лицензии **GNU GPL-3.0-or-later**. При распространении модифицированной версии необходимо сохранить уведомление об исходном проекте из [`NOTICE.md`](NOTICE.md). Форки должны использовать собственное оформление и не выдавать себя за официальный релиз BRKCHRD.
+
+Developed by **Myldy design** — [@myldy20](https://github.com/myldy20).
