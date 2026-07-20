@@ -22,34 +22,48 @@ struct Patch {
     const char* character;
     const char* engine_name;
     EngineKind engine;
+    VoicingProfile voicing;
     std::array<float, static_cast<std::size_t>(SynthParameter::Count)> controls;
     EffectSettings fx1;
     EffectSettings fx2;
     float decay;
     float sustain;
+    float level;
 };
 
-constexpr std::array<Patch, 10> kPatches{{
-    {"VELVET POLY", "rounded analog pad", "DUAL ANALOG", EngineKind::Analog,
-     {0.56F,0.58F,0.24F,0.28F,0.58F,0.62F,0.78F}, {EffectType::Chorus,0.42F,0.42F}, {EffectType::Reverb,0.30F,0.58F}, 0.55F, 0.78F},
-    {"DUST PIANO", "soft struck electric keys", "ELECTRIC TINES", EngineKind::Electric,
-     {0.68F,0.38F,0.16F,0.02F,0.42F,0.54F,0.82F}, {EffectType::Tremolo,0.16F,0.38F}, {EffectType::Delay,0.22F,0.32F}, 0.70F, 0.10F},
-    {"CHAPEL ORGAN", "dense restrained organ", "ADDITIVE ORGAN", EngineKind::Organ,
-     {0.46F,0.76F,0.08F,0.02F,0.30F,0.38F,0.76F}, {EffectType::Phaser,0.18F,0.30F}, {EffectType::Reverb,0.36F,0.72F}, 0.20F, 0.96F},
-    {"STRING HAZE", "wide slow ensemble", "STRING ENSEMBLE", EngineKind::Strings,
-     {0.48F,0.44F,0.38F,0.52F,0.74F,0.88F,0.70F}, {EffectType::Chorus,0.70F,0.62F}, {EffectType::Reverb,0.48F,0.78F}, 0.72F, 0.86F},
-    {"TAPE CHOIR", "worn breathing vowels", "FORMANT CHOIR", EngineKind::Choir,
-     {0.40F,0.70F,0.58F,0.48F,0.82F,0.78F,0.68F}, {EffectType::Chorus,0.56F,0.74F}, {EffectType::Delay,0.26F,0.64F}, 0.85F, 0.82F},
-    {"WIRE PLUCK", "dry metallic pluck", "RESONANT PLUCK", EngineKind::Pluck,
-     {0.76F,0.48F,0.22F,0.01F,0.24F,0.66F,0.80F}, {EffectType::Drive,0.16F,0.30F}, {EffectType::Delay,0.34F,0.44F}, 0.36F, 0.00F},
-    {"FROZEN GLASS", "bright unstable FM", "PHASE MOD", EngineKind::Glass,
-     {0.82F,0.24F,0.44F,0.01F,0.60F,0.82F,0.72F}, {EffectType::Phaser,0.34F,0.76F}, {EffectType::Reverb,0.58F,0.86F}, 0.62F, 0.08F},
-    {"DOOM STACK", "saturated octave wall", "POWER STACK", EngineKind::Doom,
-     {0.34F,0.92F,0.18F,0.04F,0.46F,0.46F,0.62F}, {EffectType::Drive,0.72F,0.56F}, {EffectType::Reverb,0.20F,0.38F}, 0.42F, 0.88F},
-    {"SMOKE REED", "nasal living reed", "PULSE REED", EngineKind::Reed,
-     {0.52F,0.60F,0.52F,0.10F,0.48F,0.42F,0.76F}, {EffectType::Tremolo,0.22F,0.52F}, {EffectType::Chorus,0.26F,0.32F}, 0.50F, 0.74F},
-    {"SUB ALTAR", "low fundamental mass", "SUB HARMONICS", EngineKind::Sub,
-     {0.18F,0.96F,0.18F,0.62F,0.94F,0.72F,0.58F}, {EffectType::Drive,0.28F,0.24F}, {EffectType::Reverb,0.34F,0.30F}, 0.82F, 0.94F},
+constexpr std::array<Patch, 16> kPatches{{
+    {"AMBER KEYS", "warm rounded electric keys", "ELECTRIC TINES", EngineKind::Electric, VoicingProfile::Keys,
+     {0.50F,0.66F,0.12F,0.02F,0.48F,0.48F,0.82F}, {EffectType::Tremolo,0.10F,0.30F}, {EffectType::Reverb,0.24F,0.56F}, 0.82F, 0.18F, 0.98F},
+    {"ANALOG BLOOM", "soft wide analog chord pad", "DUAL ANALOG", EngineKind::Analog, VoicingProfile::Pad,
+     {0.42F,0.62F,0.20F,0.24F,0.68F,0.72F,0.78F}, {EffectType::Chorus,0.34F,0.42F}, {EffectType::Reverb,0.28F,0.62F}, 0.72F, 0.84F, 0.92F},
+    {"MOON ORGAN", "mellow sustained organ", "ADDITIVE ORGAN", EngineKind::Organ, VoicingProfile::Organ,
+     {0.38F,0.72F,0.06F,0.02F,0.34F,0.34F,0.76F}, {EffectType::Chorus,0.18F,0.34F}, {EffectType::Reverb,0.32F,0.68F}, 0.24F, 0.98F, 0.88F},
+    {"CINEMA STRINGS", "smooth restrained ensemble", "STRING ENSEMBLE", EngineKind::Strings, VoicingProfile::Pad,
+     {0.36F,0.54F,0.26F,0.34F,0.72F,0.82F,0.72F}, {EffectType::Chorus,0.46F,0.54F}, {EffectType::Reverb,0.36F,0.72F}, 0.88F, 0.90F, 0.82F},
+    {"VELVET CHOIR", "dark breathless vowel pad", "FORMANT CHOIR", EngineKind::Choir, VoicingProfile::Choir,
+     {0.34F,0.68F,0.24F,0.30F,0.78F,0.70F,0.70F}, {EffectType::Chorus,0.32F,0.62F}, {EffectType::Reverb,0.34F,0.74F}, 0.94F, 0.88F, 0.78F},
+    {"MUTED PLUCK", "soft woody articulated pluck", "RESONANT PLUCK", EngineKind::Pluck, VoicingProfile::Pluck,
+     {0.48F,0.62F,0.12F,0.01F,0.24F,0.46F,0.82F}, {EffectType::Off,0.0F,0.5F}, {EffectType::Delay,0.18F,0.32F}, 0.48F, 0.00F, 0.94F},
+    {"GLASS HARP", "gentle glass harmonics", "PHASE MOD", EngineKind::Glass, VoicingProfile::Pluck,
+     {0.46F,0.42F,0.18F,0.01F,0.54F,0.62F,0.72F}, {EffectType::Chorus,0.16F,0.54F}, {EffectType::Reverb,0.36F,0.78F}, 0.72F, 0.06F, 0.74F},
+    {"NOIR REED", "soft smoky reed ensemble", "PULSE REED", EngineKind::Reed, VoicingProfile::Keys,
+     {0.34F,0.64F,0.18F,0.08F,0.52F,0.38F,0.76F}, {EffectType::Tremolo,0.10F,0.42F}, {EffectType::Reverb,0.18F,0.54F}, 0.58F, 0.80F, 0.78F},
+    {"DUST PIANO", "worn soft electric piano", "ELECTRIC TINES", EngineKind::Electric, VoicingProfile::Keys,
+     {0.62F,0.44F,0.18F,0.01F,0.38F,0.52F,0.80F}, {EffectType::Tremolo,0.14F,0.36F}, {EffectType::Delay,0.16F,0.28F}, 0.70F, 0.08F, 0.92F},
+    {"STRING HAZE", "wide slow moving strings", "STRING ENSEMBLE", EngineKind::Strings, VoicingProfile::Pad,
+     {0.44F,0.46F,0.40F,0.48F,0.78F,0.90F,0.68F}, {EffectType::Chorus,0.58F,0.64F}, {EffectType::Reverb,0.42F,0.80F}, 0.96F, 0.90F, 0.76F},
+    {"CHAPEL AIR", "airy restrained church organ", "ADDITIVE ORGAN", EngineKind::Organ, VoicingProfile::Organ,
+     {0.52F,0.58F,0.10F,0.06F,0.48F,0.46F,0.72F}, {EffectType::Phaser,0.10F,0.28F}, {EffectType::Reverb,0.44F,0.82F}, 0.34F, 0.96F, 0.76F},
+    {"TAPE CHOIR", "worn moving vocal tape", "FORMANT CHOIR", EngineKind::Choir, VoicingProfile::Choir,
+     {0.40F,0.72F,0.46F,0.42F,0.84F,0.76F,0.66F}, {EffectType::Chorus,0.44F,0.70F}, {EffectType::Delay,0.18F,0.58F}, 0.98F, 0.86F, 0.72F},
+    {"DOOM CHORDS", "controlled saturated power stack", "POWER STACK", EngineKind::Doom, VoicingProfile::Heavy,
+     {0.28F,0.72F,0.12F,0.03F,0.42F,0.36F,0.62F}, {EffectType::Drive,0.42F,0.34F}, {EffectType::Reverb,0.14F,0.32F}, 0.48F, 0.90F, 0.62F},
+    {"SUB ALTAR", "root fifth and octave foundation", "SUB HARMONICS", EngineKind::Sub, VoicingProfile::Bass,
+     {0.16F,0.92F,0.08F,0.18F,0.70F,0.22F,0.58F}, {EffectType::Drive,0.14F,0.18F}, {EffectType::Off,0.0F,0.5F}, 0.88F, 0.98F, 0.56F},
+    {"FROZEN GLASS", "bright unstable metallic glass", "PHASE MOD", EngineKind::Glass, VoicingProfile::Pluck,
+     {0.72F,0.30F,0.38F,0.01F,0.58F,0.74F,0.66F}, {EffectType::Phaser,0.24F,0.70F}, {EffectType::Reverb,0.44F,0.84F}, 0.66F, 0.06F, 0.64F},
+    {"WIRE PLUCK", "dry metallic short pluck", "RESONANT PLUCK", EngineKind::Pluck, VoicingProfile::Pluck,
+     {0.72F,0.46F,0.20F,0.01F,0.20F,0.58F,0.76F}, {EffectType::Drive,0.08F,0.24F}, {EffectType::Delay,0.24F,0.40F}, 0.34F, 0.00F, 0.72F},
 }};
 
 float clamp01(float value) { return std::clamp(value, 0.0F, 1.0F); }
@@ -163,7 +177,7 @@ struct SynthEngine::Impl {
         selected->life = 0.0F;
         selected->low = 0.0F;
         selected->band = 0.0F;
-        selected->pan = std::clamp(static_cast<float>((note % 12) - 6) / 8.0F, -0.75F, 0.75F);
+        selected->pan = std::clamp(static_cast<float>((note % 12) - 6) / 9.0F, -0.68F, 0.68F);
         selected->noise = static_cast<std::uint32_t>(note * 747796405U + static_cast<unsigned>(voice_age));
         selected->age = ++voice_age;
     }
@@ -212,57 +226,62 @@ struct SynthEngine::Impl {
 
     float voice_sample(Voice& voice, const Patch& p, float tone, float body, float motion) {
         const float base = midi_frequency(voice.note);
-        const float drift = 1.0F + (0.0004F + motion * 0.004F) * sine(global_lfo + voice.note * 0.017);
+        const float drift = 1.0F + (0.00025F + motion * 0.0022F) * sine(global_lfo + voice.note * 0.017);
         const float spread = controls[static_cast<std::size_t>(SynthParameter::Spread)];
-        const float detune = std::pow(2.0F, ((spread - 0.5F) * 22.0F) / 1200.0F);
+        const float detune = std::pow(2.0F, ((spread - 0.5F) * 15.0F) / 1200.0F);
         const float f1 = base * drift;
         const float f2 = base * detune / drift;
         const float f3 = base * (p.engine == EngineKind::Sub ? 0.5F : 2.0F);
         float value = 0.0F;
         switch (p.engine) {
         case EngineKind::Analog:
-            value = saw(voice.p1) * 0.48F + triangle(voice.p2) * 0.34F + square(voice.p3) * body * 0.18F;
+            value = triangle(voice.p1) * 0.34F + saw(voice.p2) * 0.28F + sine(voice.p3 * 0.5) * (0.18F + body * 0.16F);
+            value += square(voice.p1, 0.48F + motion * 0.06F) * 0.08F;
             break;
         case EngineKind::Electric: {
-            const float transient = std::exp(-voice.life * (8.0F + tone * 16.0F));
-            value = sine(voice.p1 + sine(voice.p2) * (0.08F + tone * 0.38F) * transient) * 0.72F;
-            value += sine(voice.p3) * transient * 0.28F;
+            const float transient = std::exp(-voice.life * (5.0F + tone * 9.0F));
+            const float fm = sine(voice.p2) * (0.025F + tone * 0.16F) * transient;
+            value = sine(voice.p1 + fm) * 0.64F;
+            value += sine(voice.p1 * 2.0) * (0.12F + body * 0.10F) * transient;
+            value += sine(voice.p3) * transient * 0.10F;
             break;
         }
         case EngineKind::Organ:
-            value = sine(voice.p1) * 0.46F + sine(voice.p2) * (0.22F + body * 0.18F) + sine(voice.p3) * 0.18F + sine(voice.p1 * 4.0) * tone * 0.10F;
+            value = sine(voice.p1) * 0.50F + sine(voice.p2) * (0.18F + body * 0.12F);
+            value += sine(voice.p3) * 0.12F + sine(voice.p1 * 4.0) * tone * 0.05F;
             break;
         case EngineKind::Strings:
-            value = saw(voice.p1) * 0.34F + saw(voice.p2) * 0.34F + triangle(voice.p3) * 0.24F + sine(voice.p1 * 0.5) * body * 0.08F;
+            value = triangle(voice.p1) * 0.34F + saw(voice.p2) * 0.24F + triangle(voice.p3) * 0.22F;
+            value += sine(voice.p1 * 0.5) * body * 0.12F;
             break;
         case EngineKind::Choir: {
-            const float vowel = 0.5F + 0.5F * sine(global_lfo * (0.25 + motion));
-            value = triangle(voice.p1) * (0.40F + vowel * 0.16F) + saw(voice.p2) * 0.20F;
-            value += sine(voice.p3 * (2.0 + vowel * 2.0)) * (0.18F + body * 0.12F);
-            value += next_noise(voice) * 0.025F * motion;
+            const float vowel = 0.5F + 0.5F * sine(global_lfo * (0.18 + motion * 0.54));
+            value = triangle(voice.p1) * (0.46F + vowel * 0.10F) + sine(voice.p2) * 0.22F;
+            value += sine(voice.p3 * (1.5 + vowel * 1.5)) * (0.10F + body * 0.10F);
+            value += next_noise(voice) * 0.008F * motion;
             break;
         }
         case EngineKind::Pluck: {
-            const float decay = std::exp(-voice.life * (2.0F + tone * 8.0F));
-            value = (triangle(voice.p1) * 0.56F + sine(voice.p2 * 2.0) * 0.28F + next_noise(voice) * 0.16F) * decay;
+            const float decay = std::exp(-voice.life * (1.6F + tone * 5.8F));
+            value = (triangle(voice.p1) * 0.58F + sine(voice.p2 * 2.0) * 0.22F + next_noise(voice) * 0.06F) * decay;
             break;
         }
         case EngineKind::Glass: {
-            const float index = (1.0F + tone * 8.0F) * std::exp(-voice.life * (0.7F + body * 3.0F));
-            value = sine(voice.p1 + sine(voice.p2) * index * 0.12F) * 0.78F + sine(voice.p3) * 0.22F;
+            const float index = (0.5F + tone * 3.4F) * std::exp(-voice.life * (0.8F + body * 2.2F));
+            value = sine(voice.p1 + sine(voice.p2) * index * 0.08F) * 0.76F + sine(voice.p3) * 0.12F;
             break;
         }
         case EngineKind::Doom:
-            value = square(voice.p1, 0.46F) * 0.42F + saw(voice.p2) * 0.30F + square(voice.p3) * 0.18F + sine(voice.p1 * 0.5) * body * 0.22F;
-            value = soft_clip(value, 1.8F + body * 5.0F);
+            value = square(voice.p1, 0.47F) * 0.30F + saw(voice.p2) * 0.22F + sine(voice.p3 * 0.5) * (0.16F + body * 0.14F);
+            value = soft_clip(value, 1.25F + body * 2.2F);
             break;
         case EngineKind::Reed: {
-            const float width = 0.24F + 0.18F * sine(global_lfo * (0.5F + motion));
-            value = square(voice.p1, width) * 0.50F + sine(voice.p2) * 0.34F + triangle(voice.p3) * 0.16F;
+            const float width = 0.34F + 0.10F * sine(global_lfo * (0.35F + motion * 0.55F));
+            value = square(voice.p1, width) * 0.26F + sine(voice.p2) * 0.48F + triangle(voice.p3) * 0.14F;
             break;
         }
         case EngineKind::Sub:
-            value = sine(voice.p1) * 0.56F + sine(voice.p2 * 0.5) * 0.28F + sine(voice.p3 * 1.5) * body * 0.16F;
+            value = sine(voice.p1) * 0.62F + sine(voice.p2 * 0.5) * 0.20F + triangle(voice.p3 * 0.5) * body * 0.08F;
             break;
         }
         voice.p1 += static_cast<double>(f1 / static_cast<float>(sample_rate));
@@ -370,7 +389,7 @@ struct SynthEngine::Impl {
         const float release_seconds = 0.025F + release_control * release_control * 4.5F;
         const float attack_step = 1.0F / std::max(1.0F, attack_seconds * static_cast<float>(sample_rate));
         const float release_step = 1.0F / std::max(1.0F, release_seconds * static_cast<float>(sample_rate));
-        const float cutoff_hz = 75.0F + tone * tone * 15000.0F;
+        const float cutoff_hz = 90.0F + tone * tone * 14500.0F;
         const float filter = 2.0F * std::sin(static_cast<float>(kPi) * std::min(0.45F, cutoff_hz / static_cast<float>(sample_rate)));
         float block_peak = 0.0F;
         for (std::size_t frame = 0; frame < frames; ++frame) {
@@ -388,24 +407,27 @@ struct SynthEngine::Impl {
                 }
                 if (!voice.gate && voice.env <= kEpsilon) { voice.active = false; continue; }
                 ++active;
-                float sample = voice_sample(voice, p, tone, body, motion) * voice.env * 0.19F;
+                float sample = voice_sample(voice, p, tone, body, motion) * voice.env * 0.24F * p.level;
                 voice.low += filter * voice.band;
                 const float high = sample - voice.low - 0.32F * voice.band;
                 voice.band += filter * high;
-                sample = voice.low + voice.band * (0.18F + body * 0.42F);
-                const float pan = std::clamp(voice.pan * (0.25F + spread * 0.75F), -0.92F, 0.92F);
+                sample = voice.low + voice.band * (0.22F + body * 0.42F) + high * tone * 0.05F;
+                const float pan = std::clamp(voice.pan * (0.20F + spread * 0.72F), -0.86F, 0.86F);
                 left += sample * std::sqrt(0.5F * (1.0F - pan));
                 right += sample * std::sqrt(0.5F * (1.0F + pan));
             }
-            if (active > 7) { const float normalise = 7.0F / static_cast<float>(active); left *= normalise; right *= normalise; }
+            if (active > 1) {
+                const float normalise = 1.0F / std::sqrt(0.62F * static_cast<float>(active));
+                left *= normalise; right *= normalise;
+            }
             auto first = process_effect(0, left, right);
             auto second = process_effect(1, first.first, first.second);
-            left = soft_clip(second.first * (0.32F + master * 0.92F), 1.25F);
-            right = soft_clip(second.second * (0.32F + master * 0.92F), 1.25F);
+            left = soft_clip(second.first * (0.36F + master * 0.88F), 1.18F);
+            right = soft_clip(second.second * (0.36F + master * 0.88F), 1.18F);
             block_peak = std::max(block_peak, std::max(std::abs(left), std::abs(right)));
             out[frame * 2U] = left;
             out[frame * 2U + 1U] = right;
-            global_lfo += (0.04 + motion * 0.78) / sample_rate;
+            global_lfo += (0.03 + motion * 0.62) / sample_rate;
             if (global_lfo >= 1.0) global_lfo -= 1.0;
         }
         peak.store(peak.load(std::memory_order_relaxed) * 0.86F + block_peak * 0.14F, std::memory_order_relaxed);
@@ -425,6 +447,7 @@ int SynthEngine::preset_index() const { std::scoped_lock lock(impl_->mutex); ret
 PresetInfo SynthEngine::preset_info() const {
     std::scoped_lock lock(impl_->mutex); const Patch& p = impl_->patch(); return {p.name, p.character, p.engine_name};
 }
+VoicingProfile SynthEngine::voicing_profile() const { std::scoped_lock lock(impl_->mutex); return impl_->patch().voicing; }
 int SynthEngine::preset_count() { return static_cast<int>(kPatches.size()); }
 
 void SynthEngine::set_parameter(SynthParameter parameter, float value) {
