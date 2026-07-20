@@ -21,12 +21,32 @@ jobs:
           ref: agent/brkchrd-v052
           fetch-depth: 0
       - name: Apply reviewed BRKCHRD 0.5.2 migration
-        run: python3 tools/migrate_v052.py
-      - name: Commit source, documentation hooks and permanent CI
+        run: |
+          set -euo pipefail
+          if [ ! -f tools/migrate_v052.py ]; then
+            echo 'Migration already applied.'
+            exit 0
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/migrate_v052.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''# Replace the temporary migration workflow with the permanent CI definition.\n(ROOT / ".github/workflows/build.yml").write_text((ROOT / "tools/build-v052.yml").read_text(encoding="utf-8"), encoding="utf-8")\n(ROOT / "tools/build-v052.yml").unlink()\nPath(__file__).unlink()\n'''
+          new = '''# Leave the workflow template for connector-side promotion after this source commit.\ntrigger = ROOT / "tools/v052.trigger"\nif trigger.exists(): trigger.unlink()\nPath(__file__).unlink()\n'''
+          if old not in s:
+              raise SystemExit('migration tail not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          python3 tools/migrate_v052.py
+      - name: Commit migrated source
         run: |
           set -euo pipefail
           git config user.name myldy20
           git config user.email myldy20@users.noreply.github.com
           git add -A
+          if git diff --cached --quiet; then
+            echo 'No migration changes to publish.'
+            exit 0
+          fi
           git commit -m 'Add Russian UI and hold-mode chord colours'
           git push origin HEAD:agent/brkchrd-v052
