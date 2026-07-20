@@ -1,0 +1,88 @@
+
+        << "swapleft " << (ui.swap_left_rear ? 1 : 0) << '\n' << "swapright " << (ui.swap_right_rear ? 1 : 0) << '\n';
+    for (int i = 0; i < static_cast<int>(SynthParameter::Count); ++i) out << "param" << i << ' ' << synth.parameter(static_cast<SynthParameter>(i)) << '\n';
+    for (int slot = 0; slot < 2; ++slot) {
+        const auto fx = synth.effect(slot); const int n = slot + 1;
+        out << "fx" << n << "type " << static_cast<int>(fx.type) << '\n'
+            << "fx" << n << "amount " << fx.amount << '\n'
+            << "fx" << n << "colour " << fx.colour << '\n';
+    }
+}
+
+void audio_callback(void* userdata, Uint8* bytes, int count) {
+    auto* synth = static_cast<SynthEngine*>(userdata);
+    synth->render(reinterpret_cast<float*>(bytes), static_cast<std::size_t>(count) / (sizeof(float) * 2U));
+}
+
+void draw_background(SDL_Renderer* r, const UiState& ui, float peak) {
+    rect(r, 0, 0, kWidth, kHeight, kBg);
+    if (ui.ui_motion == 0) return;
+    const float t = static_cast<float>(SDL_GetTicks()) * 0.001F;
+    const int drift = ui.ui_motion == 2 ? static_cast<int>(std::fmod(t * 8.0F, 24.0F)) : 0;
+    for (int x = -24 + drift; x < kWidth + 32; x += 24) line(r, x, 36, x - 56, kHeight, alpha(kPurple, 22));
+    for (int y = 46; y < kHeight; y += 24) line(r, 0, y, kWidth, y, alpha(kInk, 12));
+    if (ui.ui_motion == 2) {
+        const int glow = 22 + static_cast<int>(36.0F * std::clamp(peak, 0.0F, 1.0F));
+        rect(r, 0, 34, kWidth, glow, alpha(kPurple, 18));
+    }
+}
+
+Colour mode_accent(DpadMode mode) {
+    if (mode == DpadMode::Sound) return kOrange;
+    if (mode == DpadMode::Fx) return kTeal;
+    return kPurpleBright;
+}
+
+void draw_header(SDL_Renderer* r, const PerformanceState& p, const UiState& ui, float peak) {
+    rect(r, 0, 0, kWidth, 36, kPanel);
+    text(r, 12, 8, "BRKCHRD", 2, kInk);
+    micro(r, 12, 27, std::string("V") + kVersion, kDim);
+    const Colour accent = mode_accent(ui.dpad_mode);
+    rect(r, 164, 5, 112, 26, accent);
+    text(r, 220, 11, dpad_mode_name(ui.dpad_mode), 1, kBg, true, 1);
+    micro(r, 292, 9, "OCT", kDim);
+    text(r, 323, 8, (p.octave >= 0 ? "+" : "") + std::to_string(p.octave), 2, kInk, true);
+    micro(r, 350, 9, "MODE", kDim);
+    text(r, 405, 8, mode_name(p.mode), 1, kInk, true);
+    rect(r, 462, 9, 38, 12, kBgLift);
+    rect(r, 464, 11, static_cast<int>(34.0F * std::clamp(peak, 0.0F, 1.0F)), 8,
+         peak > 0.85F ? kRed : peak > 0.55F ? kOrange : kGreen);
+    micro(r, 481, 25, "OUT", kDim, true);
+}
+
+void panel_frame(SDL_Renderer* r, int x, int y, int w, int h, Colour accent) {
+    rect(r, x, y, w, h, kPanel);
+    outline(r, x, y, w, h, alpha(accent, 210));
+    outline(r, x + 2, y + 2, w - 4, h - 4, alpha(accent, 55));
+}
+
+void draw_cell(SDL_Renderer* r, int x, int y, int w, int h, const std::string& label,
+               bool active, bool live, Colour accent) {
+    Colour fill = active ? accent : live ? kPanel3 : kPanel2;
+    rect(r, x, y, w, h, fill);
+    outline(r, x, y, w, h, live ? kWhite : alpha(accent, 130));
+    text(r, x + w / 2, y + h / 2 - 4, fit(label, 11), 1, active ? kBg : kInk, true, 0);
+}
+
+std::array<std::pair<Direction, std::pair<int, int>>, 8> grid_positions(int x, int y, int cw, int ch, int gap) {
+    return {{{Direction::UpLeft, {x, y}}, {Direction::Up, {x + cw + gap, y}}, {Direction::UpRight, {x + 2 * (cw + gap), y}},
+             {Direction::Left, {x, y + ch + gap}}, {Direction::Right, {x + 2 * (cw + gap), y + ch + gap}},
+             {Direction::DownLeft, {x, y + 2 * (ch + gap)}}, {Direction::Down, {x + cw + gap, y + 2 * (ch + gap)}},
+             {Direction::DownRight, {x + 2 * (cw + gap), y + 2 * (ch + gap)}}}};
+}
+
+void draw_chord_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
+    constexpr int x = 12, y = 46, w = 238, h = 286;
+    const int palette = display_palette(in, ui);
+    const Colour accent = palette == 2 ? kRed : palette == 1 ? kPurpleBright : kPurple;
+    panel_frame(r, x, y, w, h, accent);
+    text(r, x + 12, y + 10, palette_name(palette), 2, accent);
+    micro(r, x + w - 12, y + 14, in.l1 ? "L1 HELD" : "L1 ALT", in.l1 ? kWhite : kDim, true);
+    micro(r, x + 12, y + 35, "DPAD ARMS CHORD COLOUR", kDim);
+
+    const int gx = x + 10, gy = y + 58, cw = 68, ch = 56, gap = 6;
+    const auto positions = grid_positions(gx, gy, cw, ch, gap);
+    for (const auto& item : positions) {
+        const Direction d = item.first;
+        const int px = item.second.first, py = item.second.second;
+        const bool active = ui.selected
