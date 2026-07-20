@@ -105,6 +105,16 @@ struct EffectState {
     int hold = 0;
     float held_l = 0.0F;
     float held_r = 0.0F;
+
+    void reset() {
+        std::fill(left.begin(), left.end(), 0.0F);
+        std::fill(right.begin(), right.end(), 0.0F);
+        position = 0U;
+        lfo = 0.0;
+        ap_l1 = ap_l2 = ap_r1 = ap_r2 = 0.0F;
+        hold = 0;
+        held_l = held_r = 0.0F;
+    }
 };
 
 void write_u16(std::ofstream& out, std::uint16_t value) {
@@ -149,6 +159,7 @@ struct SynthEngine::Impl {
         controls = patch().controls;
         effects[0] = patch().fx1;
         effects[1] = patch().fx2;
+        for (auto& state : fx_state) state.reset();
     }
 
     std::int64_t beat_samples(double beats) const {
@@ -460,7 +471,12 @@ void SynthEngine::set_effect(int slot, EffectSettings settings) {
     if (slot < 0 || slot >= 2) return;
     std::scoped_lock lock(impl_->mutex);
     settings.amount = clamp01(settings.amount); settings.colour = clamp01(settings.colour);
-    impl_->effects[static_cast<std::size_t>(slot)] = settings;
+    const std::size_t index = static_cast<std::size_t>(slot);
+    const EffectSettings previous = impl_->effects[index];
+    const bool reset_state = previous.type != settings.type ||
+        (previous.amount <= kEpsilon && settings.amount > kEpsilon);
+    impl_->effects[index] = settings;
+    if (reset_state) impl_->fx_state[index].reset();
 }
 EffectSettings SynthEngine::effect(int slot) const {
     if (slot < 0 || slot >= 2) return {};

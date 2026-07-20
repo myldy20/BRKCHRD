@@ -1,4 +1,6 @@
 #define SDL_MAIN_HANDLED
+#include "brkchrd/config.hpp"
+#include "brkchrd/input_safety.hpp"
 #include "brkchrd/music.hpp"
 #include "brkchrd/synth.hpp"
 #include "ui_i18n.hpp"
@@ -14,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -134,9 +137,11 @@ enum class DpadMode { Chord = 0, Sound, Fx, Count };
 
 struct InputState {
     std::array<bool, 4> face{};
+    FacePressState face_order;
     bool up = false, down = false, left = false, right = false;
     bool front_left = false, front_right = false;
     bool l1 = false, l2 = false, r1 = false, r2 = false;
+    bool left_trigger = false, right_trigger = false;
     bool start = false, select = false;
     bool start_long = false;
     Uint32 start_since = 0U;
@@ -213,12 +218,15 @@ std::string dpad_mode_name(DpadMode mode, Language language) {
 std::string percent(float value) { return std::to_string(static_cast<int>(std::round(std::clamp(value, 0.0F, 1.0F) * 100.0F))) + "%"; }
 
 void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
-    std::ifstream in(config_path());
-    std::string key; float value = 0.0F;
+    const ConfigReadResult config = read_numeric_config(config_path());
+    for (const std::string& warning : config.warnings) std::cerr << "config: " << warning << '\n';
+
     std::array<float, static_cast<std::size_t>(SynthParameter::Count)> params{};
     std::array<bool, static_cast<std::size_t>(SynthParameter::Count)> param_seen{};
     std::array<EffectSettings, 2> effects{}; std::array<bool, 2> effect_seen{};
-    while (in >> key >> value) {
+    for (const ConfigEntry& entry : config.entries) {
+        const std::string& key = entry.key;
+        const float value = entry.value;
         if (key == "key") p.key_pc = std::clamp(static_cast<int>(value), 0, 11);
         else if (key == "octave") p.octave = std::clamp(static_cast<int>(value), -2, 2);
         else if (key == "preset") p.preset = static_cast<int>(value);
@@ -239,15 +247,16 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
         else if (key == "uimotion") ui.ui_motion = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "swapleft") ui.swap_left_rear = value != 0.0F;
         else if (key == "swapright") ui.swap_right_rear = value != 0.0F;
-        else if (key.rfind("param", 0) == 0) {
-            const int index = std::clamp(std::stoi(key.substr(5)), 0, static_cast<int>(SynthParameter::Count) - 1);
-            params[static_cast<std::size_t>(index)] = value; param_seen[static_cast<std::size_t>(index)] = true;
+        else if (const auto index = parse_indexed_key(key, "param", static_cast<int>(SynthParameter::Count))) {
+            params[static_cast<std::size_t>(*index)] = value;
+            param_seen[static_cast<std::size_t>(*index)] = true;
         } else if (key == "fx1type") { effects[0].type = static_cast<EffectType>(std::clamp(static_cast<int>(value), 0, SynthEngine::effect_count() - 1)); effect_seen[0] = true; }
         else if (key == "fx1amount") { effects[0].amount = value; effect_seen[0] = true; }
         else if (key == "fx1colour") { effects[0].colour = value; effect_seen[0] = true; }
         else if (key == "fx2type") { effects[1].type = static_cast<EffectType>(std::clamp(static_cast<int>(value), 0, SynthEngine::effect_count() - 1)); effect_seen[1] = true; }
         else if (key == "fx2amount") { effects[1].amount = value; effect_seen[1] = true; }
         else if (key == "fx2colour") { effects[1].colour = value; effect_seen[1] = true; }
+        else std::cerr << "config: ignored unknown key on line " << entry.line << ": " << key << '\n';
     }
     p.latch = false;
     if (!ui.perf_fx_enabled && ui.dpad_mode == DpadMode::Fx) ui.dpad_mode = DpadMode::Chord;
@@ -257,8 +266,7 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
 }
 
 void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine& synth) {
-    const auto path = config_path(); std::error_code ec; std::filesystem::create_directories(path.parent_path(), ec);
-    std::ofstream out(path);
+    std::ostringstream out;
     out << "key " << p.key_pc << '\n' << "octave " << p.octave << '\n' << "preset " << synth.preset_index() << '\n'
         << "bpm " << p.bpm << '\n' << "mode " << static_cast<int>(p.mode) << '\n' << "latch 0\n"
         << "defaultpalette " << ui.default_palette << '\n' << "l2palette " << ui.l1_palette << '\n'
@@ -278,6 +286,9 @@ void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine
             << "fx" << n << "amount " << fx.amount << '\n'
             << "fx" << n << "colour " << fx.colour << '\n';
     }
+
+    std::string error;
+    if (!atomic_write_text(config_path(), out.str(), &error)) std::cerr << "config: " << error << '\n';
 }
 
 void audio_callback(void* userdata, Uint8* bytes, int count) {
@@ -613,6 +624,21 @@ bool show_splash(SDL_Renderer* r) {
     return true;
 }
 
+
+void show_fatal_error(SDL_Renderer* renderer, Language language, std::string_view english, std::string_view russian) {
+    const std::string message = brkchrd_ui::tr(language, english, russian);
+    const Uint32 until = SDL_GetTicks() + 3000U;
+    while (SDL_GetTicks() < until) {
+        SDL_Event event{};
+        while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT || event.type == SDL_KEYDOWN) return;
+        rect(renderer, 0, 0, kWidth, kHeight, kBg);
+        text(renderer, kWidth / 2, 150, brkchrd_ui::tr(language, "FATAL ERROR", "КРИТИЧЕСКАЯ ОШИБКА"), 2, kRed, true, 1);
+        text(renderer, kWidth / 2, 190, fit(message, 38), 1, kInk, true, 0);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(16);
+    }
+}
+
 std::optional<Face> face_button(SDL_GameControllerButton button) {
     switch (button) {
     case SDL_CONTROLLER_BUTTON_A: return Face::A; // physical B, bottom
@@ -642,13 +668,19 @@ void update_chord(PerformanceState& p, UiState& ui, InputState& in,
     const auto notes = voice_chord(chord, previous, p.voice_leading, synth.voicing_profile());
     previous = notes; current = chord; synth.play_chord(notes);
 }
+void press_face(InputState& in, Face face) {
+    const std::size_t index = static_cast<std::size_t>(face);
+    if (index >= in.face.size() || in.face[index]) return;
+    in.face[index] = true;
+    in.face_order.press(face);
+    in.active_face = in.face_order.active();
+}
 void release_face(InputState& in, Face face, std::optional<ChordSpec>& current, SynthEngine& synth) {
-    in.face[static_cast<std::size_t>(face)] = false;
-    if (in.active_face && *in.active_face == face) {
-        in.active_face.reset();
-        for (int i = 3; i >= 0; --i) if (in.face[static_cast<std::size_t>(i)]) { in.active_face = static_cast<Face>(i); break; }
-        if (!in.active_face) { current.reset(); synth.release_chord(); }
-    }
+    const std::size_t index = static_cast<std::size_t>(face);
+    if (index < in.face.size()) in.face[index] = false;
+    in.face_order.release(face);
+    in.active_face = in.face_order.active();
+    if (!in.active_face) { current.reset(); synth.release_chord(); }
 }
 
 EffectSettings fx(EffectType type, float amount, float colour_value) {
@@ -718,12 +750,21 @@ void cycle_dpad_mode(UiState& ui, InputState& in, SynthEngine& synth) {
     if (ui.dpad_mode == DpadMode::Fx) update_performance_fx(ui, in, synth);
 }
 
-void edit_sound(UiState& ui, PerformanceState& p, const InputState& in, SynthEngine& synth, int delta) {
+void edit_sound(UiState& ui, PerformanceState& p, InputState& in, SynthEngine& synth,
+                std::optional<ChordSpec>& current, std::vector<int>& previous, int delta) {
     const int layer = in.l1 ? 1 : 0;
     const int row = ui.sound_row[static_cast<std::size_t>(layer)];
     if (layer == 0) {
-        if (row == 0) { p.preset = (p.preset + delta + SynthEngine::preset_count()) % SynthEngine::preset_count(); synth.set_preset(p.preset); toast(ui, synth.preset_info().name); }
-        else { const auto param = static_cast<SynthParameter>(row - 1); synth.set_parameter(param, synth.parameter(param) + static_cast<float>(delta) * 0.02F); }
+        if (row == 0) {
+            p.preset = (p.preset + delta + SynthEngine::preset_count()) % SynthEngine::preset_count();
+            synth.set_preset(p.preset);
+            previous.clear();
+            if (in.active_face) update_chord(p, ui, in, current, previous, synth);
+            toast(ui, synth.preset_info().name);
+        } else {
+            const auto param = static_cast<SynthParameter>(row - 1);
+            synth.set_parameter(param, synth.parameter(param) + static_cast<float>(delta) * 0.02F);
+        }
     } else {
         if (row <= 2) { const auto param = static_cast<SynthParameter>(row + static_cast<int>(SynthParameter::Attack)); synth.set_parameter(param, synth.parameter(param) + static_cast<float>(delta) * 0.02F); }
         else if (row == 3) { p.bpm = std::clamp(p.bpm + delta, 40, 240); synth.set_bpm(p.bpm); }
@@ -799,7 +840,7 @@ void handle_dpad_press(UiState& ui, PerformanceState& p, InputState& in, SynthEn
     } else if (ui.dpad_mode == DpadMode::Sound) {
         if (up) move_sound_row(ui, in, -1);
         if (down) move_sound_row(ui, in, 1);
-        if (left || right) edit_sound(ui, p, in, synth, right ? 1 : -1);
+        if (left || right) edit_sound(ui, p, in, synth, current, previous, right ? 1 : -1);
     }
     if ((ui.settings || ui.dpad_mode == DpadMode::Sound) && (left || right)) {
         ui.held_edit = right ? 1 : -1; ui.held_since = SDL_GetTicks(); ui.last_repeat = ui.held_since;
@@ -817,13 +858,14 @@ void update_chord_hold(UiState& ui, PerformanceState& p, InputState& in, SynthEn
     if (in.active_face) update_chord(p, ui, in, current, previous, synth);
 }
 
-void repeat_edit(UiState& ui, PerformanceState& p, const InputState& in, SynthEngine& synth) {
+void repeat_edit(UiState& ui, PerformanceState& p, InputState& in, SynthEngine& synth,
+                 std::optional<ChordSpec>& current, std::vector<int>& previous) {
     if (ui.held_edit == 0) return;
     const Uint32 now = SDL_GetTicks(); const Uint32 age = now - ui.held_since;
     const Uint32 interval = age > 2200U ? 40U : age > 850U ? 90U : 100000U;
     if (now - ui.last_repeat < interval) return;
     if (ui.settings) edit_setting(ui, p, synth, ui.held_edit);
-    else if (ui.dpad_mode == DpadMode::Sound) edit_sound(ui, p, in, synth, ui.held_edit);
+    else if (ui.dpad_mode == DpadMode::Sound) edit_sound(ui, p, in, synth, current, previous, ui.held_edit);
     ui.last_repeat = now;
 }
 
@@ -862,6 +904,17 @@ void set_right_physical(UiState& ui, PerformanceState& p, InputState& in, bool f
     if (logical_r1) set_r1(ui, p, in, down, current, previous, synth); else set_r2(ui, p, in, down, current, previous, synth);
 }
 
+
+void reset_live_state(UiState& ui, InputState& input, std::optional<ChordSpec>& current,
+                      std::vector<int>& previous, SynthEngine& synth) {
+    restore_performance_fx(ui, synth);
+    input = InputState{};
+    current.reset();
+    previous.clear();
+    ui.held_edit = 0;
+    synth.all_notes_off();
+}
+
 void log_controller(SDL_GameController* controller) {
     if (!controller) return;
     SDL_Joystick* joystick = SDL_GameControllerGetJoystick(controller);
@@ -886,6 +939,7 @@ int main(int, char**) {
     if (!window) { std::cerr << "window: " << SDL_GetError() << '\n'; SDL_Quit(); return 1; }
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    if (!renderer) { std::cerr << "renderer: " << SDL_GetError() << '\n'; SDL_DestroyWindow(window); SDL_Quit(); return 1; }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderSetLogicalSize(renderer, kWidth, kHeight);
     if (!show_splash(renderer)) {
@@ -898,7 +952,15 @@ int main(int, char**) {
     SDL_AudioSpec desired{}; desired.freq = kRate; desired.format = AUDIO_F32SYS; desired.channels = 2;
     desired.samples = kFrames; desired.callback = audio_callback; desired.userdata = &synth;
     SDL_AudioSpec obtained{}; const SDL_AudioDeviceID audio = SDL_OpenAudioDevice(nullptr, 0, &desired, &obtained, 0);
-    if (audio != 0) SDL_PauseAudioDevice(audio, 0); else std::cerr << "audio: " << SDL_GetError() << '\n';
+    if (audio == 0) {
+        std::cerr << "audio: " << SDL_GetError() << '\n';
+        show_fatal_error(renderer, ui.language, "AUDIO INITIALIZATION FAILED", "ОШИБКА ИНИЦИАЛИЗАЦИИ АУДИО");
+        SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 1;
+    }
+    std::cerr << "audio backend=" << (SDL_GetCurrentAudioDriver() ? SDL_GetCurrentAudioDriver() : "unknown")
+              << " rate=" << obtained.freq << " frames=" << obtained.samples
+              << " channels=" << static_cast<int>(obtained.channels) << '\n';
+    SDL_PauseAudioDevice(audio, 0);
 
     SDL_GameController* controller = nullptr;
     for (int i = 0; i < SDL_NumJoysticks(); ++i) if (SDL_IsGameController(i)) { controller = SDL_GameControllerOpen(i); if (controller) break; }
@@ -912,9 +974,16 @@ int main(int, char**) {
         SDL_Event event{};
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                reset_live_state(ui, input, current, previous, synth);
+            if (event.type == SDL_AUDIODEVICEREMOVED && event.adevice.iscapture == 0 && event.adevice.which == audio) {
+                reset_live_state(ui, input, current, previous, synth);
+                running = false;
+            }
             if (event.type == SDL_CONTROLLERDEVICEADDED && !controller) { controller = SDL_GameControllerOpen(event.cdevice.which); log_controller(controller); }
             if (event.type == SDL_CONTROLLERDEVICEREMOVED && controller &&
                 SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller)) == event.cdevice.which) {
+                reset_live_state(ui, input, current, previous, synth);
                 SDL_GameControllerClose(controller); controller = nullptr;
             }
 
@@ -931,7 +1000,7 @@ int main(int, char**) {
                     std::cerr << "controller button down: " << static_cast<int>(button) << ' ' << (name ? name : "?") << '\n'; --raw_log_budget;
                 }
                 if (auto face = face_button(button)) {
-                    if (down) { input.face[static_cast<std::size_t>(*face)] = true; input.active_face = *face; update_chord(state, ui, input, current, previous, synth); }
+                    if (down) { press_face(input, *face); update_chord(state, ui, input, current, previous, synth); }
                     else { release_face(input, *face, current, synth); if (input.active_face) update_chord(state, ui, input, current, previous, synth); }
                 } else if (button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER) {
                     input.front_left = down; if (down) change_octave(state, ui, -1, input, current, previous, synth);
@@ -965,15 +1034,22 @@ int main(int, char**) {
             }
 
             if (event.type == SDL_CONTROLLERAXISMOTION) {
-                const bool down = event.caxis.value > 15000;
-                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT) set_left_physical(ui, state, input, false, down, current, previous, synth);
-                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) set_right_physical(ui, state, input, false, down, current, previous, synth);
+                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT) {
+                    const bool down = trigger_hysteresis(input.left_trigger, event.caxis.value);
+                    if (down != input.left_trigger) { input.left_trigger = down; set_left_physical(ui, state, input, false, down, current, previous, synth); }
+                }
+                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) {
+                    const bool down = trigger_hysteresis(input.right_trigger, event.caxis.value);
+                    if (down != input.right_trigger) { input.right_trigger = down; set_right_physical(ui, state, input, false, down, current, previous, synth); }
+                }
             }
 
             if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
                 const bool down = event.type == SDL_KEYDOWN; const SDL_Keycode key = event.key.keysym.sym;
+                const bool repeated = down && event.key.repeat != 0;
                 auto keyboard_face = [&](Face face) {
-                    if (down) { input.face[static_cast<std::size_t>(face)] = true; input.active_face = face; update_chord(state, ui, input, current, previous, synth); }
+                    if (repeated) return;
+                    if (down) { press_face(input, face); update_chord(state, ui, input, current, previous, synth); }
                     else { release_face(input, face, current, synth); if (input.active_face) update_chord(state, ui, input, current, previous, synth); }
                 };
                 if (key == SDLK_z) keyboard_face(Face::A);
@@ -1005,9 +1081,9 @@ int main(int, char**) {
         }
 
         if (input.start && !input.select && !input.start_long && SDL_GetTicks() - input.start_since > 850U) {
-            input.start_long = true; synth.all_notes_off(); current.reset(); input.active_face.reset(); input.face.fill(false); toast(ui, brkchrd_ui::tr(ui.language, "ALL NOTES OFF", "ВСЕ НОТЫ ВЫКЛ"), 1200U);
+            input.start_long = true; synth.all_notes_off(); current.reset(); input.face.fill(false); input.face_order.clear(); input.active_face.reset(); toast(ui, brkchrd_ui::tr(ui.language, "ALL NOTES OFF", "ВСЕ НОТЫ ВЫКЛ"), 1200U);
         }
-        repeat_edit(ui, state, input, synth);
+        repeat_edit(ui, state, input, synth, current, previous);
         if (SDL_GetTicks() >= ui.toast_until) ui.toast.clear();
         draw_ui(renderer, state, ui, input, current, synth);
         SDL_RenderPresent(renderer); SDL_Delay(8);
