@@ -1,113 +1,129 @@
 # BRKCHRD
 
-**BRKCHRD** is an open-source chord-performance instrument for TrimUI Brick. It turns the handheld into a self-contained harmony synth with functional chord banks, armable chord colours, automatic voice leading, ten synthesis engines, editable base effects and momentary performance FX.
+**BRKCHRD** is an open-source chord-performance instrument for TrimUI Brick. Four face buttons play functional chords while the D-pad selects chord colours, edits the synth or performs momentary effects.
 
-Current version: **0.4.0 performance workflow preview**.
+Current version: **0.5.0 smart voicing preview**.
 
 **English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [Architecture](docs/architecture.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Hardware test](docs/hardware-test-checklist.en.md)
 
 **Русский:** [Руководство](docs/manual.ru.md) · [Управление](docs/controls.ru.md) · [Звуковой движок](docs/sound-design.ru.md) · [Установка](docs/install.ru.md) · [Архитектура](docs/architecture.ru.md) · [Диагностика](docs/troubleshooting.ru.md) · [Аппаратный тест](docs/hardware-test-checklist.ru.md)
 
-## Why 0.4 exists
+## What changed in 0.5
 
-Version 0.3 proved the visual system, but treated every rear control as a page switch. Physical testing and the controller log showed that the Brick exposes four distinct rear controls: L1/R1 through stick-button mappings and L2/R2 through trigger-button mappings. Version 0.4 uses them as performance controls rather than navigation.
+Version 0.5 addresses two musical problems found on the physical Brick:
 
-## Performance model
+1. the old voice-leading algorithm let the order of ABXY presses move the same chord into different octaves and could partially cancel an explicit octave change;
+2. every synth received the same dense voicing, so low or distorted instruments could turn extended chords into mud and dissonant output.
 
-The right half always remains a playable ABXY chord diamond. The left half changes according to the current D-pad mode.
+### Stable or live voicing
 
-### CHORD
+`VOICE LEAD` is now a separate setting.
 
-- D-pad selects and stores a chord colour.
-- L1 held shows an alternate colour palette.
-- Releasing L1 returns the display to the default palette, but does not erase the selected chord colour.
-- The stored colour continues to affect every chord while SOUND or PERF FX is open.
+- **OFF — default:** one button, bank, colour and octave always produce the same notes. Changing octave moves the complete voicing by exactly 12 semitones.
+- **ON:** BRKCHRD searches nearby inversions based on the previous chord, preserving the expressive clockwise/counter-clockwise behaviour. The search is now anchored to the selected octave and cannot freely drag the chord back into the old register.
 
-The default palette and the L1-held palette are independently configurable as CLASSIC, EXTENDED or DARK.
+### Instrument-aware chord spacing
 
-### SOUND
+Each factory preset declares a voicing profile:
 
-L2 cycles into SOUND. D-pad Up/Down selects a parameter and Left/Right edits it.
+- Keys and Organ use clear four-note shell voicings;
+- Pad and Choir can use wider five-note voicings;
+- Pluck raises the useful register and removes unnecessary inner notes;
+- Heavy keeps power/shell information instead of stacking dense low extensions;
+- Bass reduces chords to root, fifth and octave.
 
-- normal layer: Preset, Tone, Body and Motion;
-- L1 held: Attack, Release, Spread, BPM and Play Mode.
+Chord construction is also quality-aware. Minor and diminished scale degrees now receive appropriate minor, half-diminished or diminished extensions rather than forced major structures.
 
-ABXY stay playable during editing, and the previously selected maj7, power, sus, add9 or other chord colour remains active.
+## Sixteen factory sounds
 
-### PERF FX
+The factory set was rebuilt for chord playing:
 
-L2 cycles again into PERF FX. Holding a D-pad direction temporarily replaces the two normal FX slots with a performance combination. Releasing the direction restores the saved base FX exactly.
+1. Amber Keys
+2. Analog Bloom
+3. Moon Organ
+4. Cinema Strings
+5. Velvet Choir
+6. Muted Pluck
+7. Glass Harp
+8. Noir Reed
+9. Dust Piano
+10. String Haze
+11. Chapel Air
+12. Tape Choir
+13. Doom Chords
+14. Sub Altar
+15. Frozen Glass
+16. Wire Pluck
 
-- normal layer: cuts, stutters, chopping, crushing, drive, wash, deep echo and phase combinations;
-- L1 held: a second, more extreme bank with abyssal delay/reverb, ratetrap, glitch, broken, doom, shimmer-like, tunnel and alien combinations.
+The new patches use less aggressive FM/noise/detune, individual output compensation and chord-count normalisation. Doom Chords and Sub Altar deliberately simplify dense extensions to keep the low end usable.
 
-This is designed as a sampler-style live gesture system rather than a menu of static effect presets.
-
-## Chord banks
-
-R1 and R2 are momentary chord-bank modifiers. The default, R1-held and R2-held banks can each be configured as CORE, DIATONIC+ or BORROWED.
-
-The physical button layout is:
-
-```text
-        X
-Y               A
-        B
-```
-
-The default CORE mapping remains:
-
-```text
-        X = IV
-Y = vi          A = V
-        B = I
-```
-
-## Controls
+## Performance controls
 
 | Control | Action |
 | --- | --- |
-| glowing front left | octave down |
-| glowing front right | octave up |
-| L1 hold | alternate layer for CHORD, SOUND or PERF FX |
-| L2 press | cycle CHORD → SOUND → PERF FX |
-| R1 hold | configured alternate chord bank 1 |
-| R2 hold | configured alternate chord bank 2 |
-| D-pad | chord colour, sound edit or momentary performance FX |
-| ABXY | play functional chords in the active bank |
+| glowing front left/right | octave down/up |
+| **L1 press** | cycle `CHORD → SOUND → PERF FX` |
+| **L2 hold** | alternate palette, sound bank or PERF FX bank |
+| R1/R2 hold | configured alternate chord banks |
+| D-pad | chord colour, sound editing or momentary performance FX |
+| ABXY | play functional chords |
 | Select | open/close Settings |
-| Start tap | next PAD / STRUM / ARP / PULSE mode |
+| Start tap | PAD / STRUM / ARP / PULSE |
 | Start hold | all notes off |
 | Start + Select | save and exit |
 
-Latch has been removed. A chord releases when its last ABXY button is released.
+The old L1/L2 duties have been exchanged. `SWAP L1/L2` remains available for firmware/controller-order differences.
+
+## D-pad modes
+
+### CHORD
+
+D-pad stores a chord colour. L2 held exposes the configured alternate palette. The selected colour remains active while SOUND, PERF FX or Settings is open.
+
+### SOUND
+
+Up/Down selects a parameter and Left/Right edits it.
+
+Normal layer: Preset, Tone, Body and Motion.
+
+L2-held layer: Attack, Release, Spread, BPM and Play Mode.
+
+### PERF FX
+
+Holding a D-pad direction temporarily substitutes a two-effect performance gesture. Releasing the direction restores the saved base FX. L2 held selects the second performance bank.
+
+`PERF FX` can be disabled in Settings. When disabled, L1 cycles only `CHORD ↔ SOUND`, and a previously saved PERF FX screen is replaced by CHORD on startup.
 
 ## Settings
 
-Settings opens with Select and includes:
+The Select menu includes:
 
-- default and L1-held colour palettes;
-- default, R1-held and R2-held chord banks;
-- both base FX slots: Type, Amount and Colour;
+- base and L2-held colour palettes;
+- base, R1 and R2 chord banks;
+- both base FX slots;
 - key and octave;
-- UI motion: OFF, LOW or FULL;
-- SWAP L1/L2 and SWAP R1/R2 for firmware/controller-order differences.
+- `VOICE LEAD` On/Off;
+- `PERF FX` On/Off;
+- UI motion;
+- rear-button swap options.
 
-## Sound engine
+Only one output meter remains: the compact meter in the top-right corner.
 
-Ten synthesis engines remain available: Velvet Poly, Dust Piano, Chapel Organ, String Haze, Tape Choir, Wire Pluck, Frozen Glass, Doom Stack, Smoke Reed and Sub Altar.
+## Startup
 
-Editable synthesis controls: Tone, Body, Motion, Attack, Release and Spread. Two serial base effect slots support Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb.
+Every normal launch shows a two-second splash:
+
+```text
+BRKCHRD
+developed by myldy design
+@myldy20
+```
+
+Automated headless tests skip the delay through `BRKCHRD_SKIP_SPLASH=1`.
 
 ## Install on Knulli / PortMaster
 
-Download the latest successful `brkchrd-v040-portmaster-aarch64` workflow artifact and extract the inner `brkchrd-v0.4.0-portmaster.zip` into:
-
-```text
-/userdata/roms/ports/
-```
-
-Expected files:
+Download `brkchrd-v050-portmaster-aarch64` from a successful workflow run and extract the inner archive into `/userdata/roms/ports/`.
 
 ```text
 /userdata/roms/ports/BRKCHRD.sh
@@ -120,8 +136,6 @@ Runtime files:
 /userdata/roms/ports/brkchrd/conf/brkchrd.cfg
 /userdata/roms/ports/brkchrd/conf/brkchrd.log
 ```
-
-The log records the SDL mapping, raw controller events and the expected v0.4 control roles.
 
 ## Build
 
