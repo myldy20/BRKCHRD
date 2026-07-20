@@ -9,6 +9,7 @@ namespace brkchrd {
 enum class Face { A = 0, B = 1, X = 2, Y = 3 };
 enum class Direction { Center, Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft };
 enum class PlayMode { Pad = 0, Strum = 1, Arp = 2, Pulse = 3 };
+enum class VoicingProfile { Keys = 0, Pad, Organ, Pluck, Choir, Heavy, Bass };
 
 struct ChordSpec {
     int root_pc = 0;
@@ -28,6 +29,7 @@ struct PerformanceState {
     int bpm = 92;
     PlayMode mode = PlayMode::Pad;
     bool latch = false;
+    bool voice_leading = false;
 };
 
 ChordSpec make_chord(int key_pc,
@@ -36,6 +38,10 @@ ChordSpec make_chord(int key_pc,
                      int chord_bank,
                      int colour_palette,
                      Direction direction);
+std::vector<int> voice_chord(const ChordSpec& chord,
+                             const std::vector<int>& previous,
+                             bool voice_leading,
+                             VoicingProfile profile);
 std::vector<int> voice_lead(const ChordSpec& chord, const std::vector<int>& previous);
 std::string face_label(int key_pc, Face face, int chord_bank);
 std::string direction_label(int colour_palette, Direction direction);
@@ -43,5 +49,6 @@ std::string note_name(int pitch_class);
 std::string mode_name(PlayMode mode);
 std::string bank_name(int bank);
 std::string palette_name(int palette);
+std::string voicing_profile_name(VoicingProfile profile);
 
 } // namespace brkchrd
