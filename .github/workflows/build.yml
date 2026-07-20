@@ -37,8 +37,12 @@ jobs:
         run: |
           grep -q 'BRKCHRD 0.5.1' docs/manual.en.md
           grep -q 'BRKCHRD 0.5.1' docs/manual.ru.md
-          grep -qi 'voice lead' docs/controls.en.md
-          grep -qi 'voice lead' docs/controls.ru.md
+          grep -qi 'voice lead' docs/manual.en.md
+          grep -qi 'voice lead' docs/manual.ru.md
+          grep -q 'L1' docs/controls.en.md
+          grep -q 'L2' docs/controls.ru.md
+          grep -q 'PERF FX' docs/controls.en.md
+          grep -q 'PERF FX' docs/controls.ru.md
           grep -q 'NextUI' docs/install.nextui.en.md
           grep -q 'NextUI' docs/install.nextui.ru.md
           grep -q 'Based on BRKCHRD by Myldy design' NOTICE.md
