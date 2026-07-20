@@ -1,0 +1,47 @@
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (1.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/runner/work/BRKCHRD/BRKCHRD/build-v040
+[ 11%] Building CXX object CMakeFiles/brkchrd_core.dir/src/music.cpp.o
+[ 22%] Building CXX object CMakeFiles/brkchrd_core.dir/src/synth.cpp.o
+[ 33%] Linking CXX static library libbrkchrd_core.a
+[ 33%] Built target brkchrd_core
+[ 55%] Building CXX object CMakeFiles/brkchrd-tests.dir/tests/test_main.cpp.o
+[ 55%] Building CXX object CMakeFiles/brkchrd-render.dir/tools/render_demo.cpp.o
+[ 66%] Linking CXX executable brkchrd-render
+[ 77%] Linking CXX executable brkchrd-tests
+[ 77%] Built target brkchrd-render
+[ 88%] Building CXX object CMakeFiles/brkchrd-sdl.dir/src/sdl_main.cpp.o
+[ 88%] Built target brkchrd-tests
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp: In function ‘std::array<unsigned char, 7> {anonymous}::glyph(char)’:
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:85:113: error: expected ‘;’ before ‘}’ token
+   85 |     case '[': return {0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; case ']': return {0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}};
+      |                                                                                                                 ^
+      |                                                                                                                 ;
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:86:5: error: case label ‘'%'’ not within a switch statement
+   86 |     case '%': return {0x19,0x19,0x02,0x04,0x08,0x13,0x13}; case '=': return {0x00,0x1F,0x00,0x1F,0x00,0x00,0x00};
+      |     ^~~~
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:86:60: error: case label ‘'='’ not within a switch statement
+   86 |     case '%': return {0x19,0x19,0x02,0x04,0x08,0x13,0x13}; case '=': return {0x00,0x1F,0x00,0x1F,0x00,0x00,0x00};
+      |                                                            ^~~~
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:87:5: error: case label ‘'_'’ not within a switch statement
+   87 |     case '_': return {0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; case ' ': return {0,0,0,0,0,0,0};
+      |     ^~~~
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:87:60: error: case label ‘' '’ not within a switch statement
+   87 |     case '_': return {0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; case ' ': return {0,0,0,0,0,0,0};
+      |                                                            ^~~~
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:88:5: error: case label not within a switch statement
+   88 |     default: return {0x1F,0x11,0x02,0x04,0x00,0x04,0x00};
+      |     ^~~~~~~
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp: At global scope:
+/home/runner/work/BRKCHRD/BRKCHRD/src/sdl_main.cpp:748:1: error: expected declaration before ‘}’ token
+  748 | } // namespace
+      | ^
+gmake[2]: *** [CMakeFiles/brkchrd-sdl.dir/build.make:79: CMakeFiles/brkchrd-sdl.dir/src/sdl_main.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:192: CMakeFiles/brkchrd-sdl.dir/all] Error 2
+gmake: *** [Makefile:101: all] Error 2
