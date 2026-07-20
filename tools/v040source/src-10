@@ -1,0 +1,55 @@
+roller(controller);
+
+    InputState input; std::optional<ChordSpec> current; std::vector<int> previous;
+    bool running = true; int raw_log_budget = 96;
+    toast(ui, "BRKCHRD 0.4  PERFORMANCE WORKFLOW", 1500U);
+
+    while (running) {
+        SDL_Event event{};
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_CONTROLLERDEVICEADDED && !controller) { controller = SDL_GameControllerOpen(event.cdevice.which); log_controller(controller); }
+            if (event.type == SDL_CONTROLLERDEVICEREMOVED && controller &&
+                SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller)) == event.cdevice.which) {
+                SDL_GameControllerClose(controller); controller = nullptr;
+            }
+
+            if ((event.type == SDL_JOYBUTTONDOWN || event.type == SDL_JOYAXISMOTION) && raw_log_budget > 0) {
+                if (event.type == SDL_JOYBUTTONDOWN) { std::cerr << "raw button down: " << static_cast<int>(event.jbutton.button) << '\n'; --raw_log_budget; }
+                else if (std::abs(event.jaxis.value) > 15000) { std::cerr << "raw axis: " << static_cast<int>(event.jaxis.axis) << " value=" << event.jaxis.value << '\n'; --raw_log_budget; }
+            }
+
+            if (event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP) {
+                const bool down = event.type == SDL_CONTROLLERBUTTONDOWN;
+                const auto button = static_cast<SDL_GameControllerButton>(event.cbutton.button);
+                if (down && raw_log_budget > 0) {
+                    const char* name = SDL_GameControllerGetStringForButton(button);
+                    std::cerr << "controller button down: " << static_cast<int>(button) << ' ' << (name ? name : "?") << '\n'; --raw_log_budget;
+                }
+                if (auto face = face_button(button)) {
+                    if (down) { input.face[static_cast<std::size_t>(*face)] = true; input.active_face = *face; update_chord(state, ui, input, current, previous, synth); }
+                    else { release_face(input, *face, current, synth); if (input.active_face) update_chord(state, ui, input, current, previous, synth); }
+                } else if (button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER) {
+                    input.front_left = down; if (down) change_octave(state, ui, -1, input, current, previous, synth);
+                } else if (button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) {
+                    input.front_right = down; if (down) change_octave(state, ui, 1, input, current, previous, synth);
+                } else if (button == SDL_CONTROLLER_BUTTON_LEFTSTICK) {
+                    set_left_physical(ui, state, input, true, down, current, previous, synth);
+                } else if (button == SDL_CONTROLLER_BUTTON_RIGHTSTICK) {
+                    set_right_physical(ui, state, input, true, down, current, previous, synth);
+                } else if (button == SDL_CONTROLLER_BUTTON_DPAD_UP || button == SDL_CONTROLLER_BUTTON_DPAD_DOWN ||
+                           button == SDL_CONTROLLER_BUTTON_DPAD_LEFT || button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
+                    set_dpad(input, button, down);
+                    if (ui.dpad_mode == DpadMode::Fx && !ui.settings) update_performance_fx(ui, input, synth);
+                    else if (down) handle_dpad_press(ui, state, input, synth, button, current, previous);
+                    if (!down && (button == SDL_CONTROLLER_BUTTON_DPAD_LEFT || button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)) ui.held_edit = 0;
+                } else if (button == SDL_CONTROLLER_BUTTON_START) {
+                    if (down) { input.start = true; input.start_long = false; input.start_since = SDL_GetTicks(); if (input.select) running = false; }
+                    else {
+                        if (!input.start_long && !input.select) { state.mode = static_cast<PlayMode>((static_cast<int>(state.mode) + 1) % 4); synth.set_mode(state.mode); toast(ui, mode_name(state.mode)); }
+                        input.start = false;
+                    }
+                } else if (button == SDL_CONTROLLER_BUTTON_BACK) {
+                    if (down) { input.select = true; if (input.start) running = false; }
+                    else {
+                        if (!input.start) { restore_performance_fx(ui, synth); ui.settings = !ui.settings; ui.held_edit = 0; toast(ui, ui.settings ? "SETTINGS" : "BACK TO PLAY"); if (!ui.settings) save_config(state, 
