@@ -1,16 +1,16 @@
-# Установка BRKCHRD 0.3 на TrimUI Brick / Knulli
+# Установка BRKCHRD 0.4.0 на TrimUI Brick / Knulli
 
 ## Что нужно
 
 - TrimUI Brick с Knulli/PortMaster;
-- артефакт `brkchrd-v030-portmaster-aarch64` из успешной сборки GitHub Actions;
+- артефакт `brkchrd-v040-portmaster-aarch64` из успешной сборки GitHub Actions;
 - около 2 МБ свободного места плюс настройки и лог;
 - SSH необязателен, но удобнее всего для тестовых обновлений.
 
-GitHub упаковывает артефакт во внешний ZIP. Внутри него находится установочный архив:
+GitHub упаковывает артефакт во внешний ZIP. Внутри находится установочный архив:
 
 ```text
-brkchrd-v0.3.0-portmaster.zip
+brkchrd-v0.4.0-portmaster.zip
 ```
 
 ## Установка по SSH
@@ -18,9 +18,9 @@ brkchrd-v0.3.0-portmaster.zip
 При настроенном alias `trimui`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.3.0-portmaster.zip trimui:/userdata/system/
+scp ~/Downloads/brkchrd-v0.4.0-portmaster.zip trimui:/userdata/system/
 ssh trimui '
-  unzip -o /userdata/system/brkchrd-v0.3.0-portmaster.zip -d /userdata/roms/ports/ &&
+  unzip -o /userdata/system/brkchrd-v0.4.0-portmaster.zip -d /userdata/roms/ports/ &&
   chmod +x "/userdata/roms/ports/BRKCHRD.sh" &&
   chmod +x /userdata/roms/ports/brkchrd/*.aarch64 &&
   sync && reboot
@@ -30,20 +30,15 @@ ssh trimui '
 Без alias:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.3.0-portmaster.zip \
+scp ~/Downloads/brkchrd-v0.4.0-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 ```
 
-Затем подключись:
+Затем подключись и установи:
 
 ```bash
 ssh root@10.53.219.134
-```
-
-И выполни:
-
-```bash
-unzip -o /userdata/system/brkchrd-v0.3.0-portmaster.zip \
+unzip -o /userdata/system/brkchrd-v0.4.0-portmaster.zip \
   -d /userdata/roms/ports/
 chmod +x "/userdata/roms/ports/BRKCHRD.sh"
 chmod +x /userdata/roms/ports/brkchrd/*.aarch64
@@ -61,9 +56,13 @@ reboot
 /userdata/roms/ports/brkchrd/conf/
 ```
 
-Папка `conf/` создаётся или переиспользуется при запуске. Обновление через `unzip -o` не удаляет настройки.
+Обновление через `unzip -o` сохраняет папку `conf/` и существующий текстовый конфиг.
 
-## Резервная копия настроек
+## Обновление с 0.3
+
+Версия 0.4 читает полезные значения 0.3: тональность, октаву, параметры движка и обычные эффекты. Старые режимы панелей и Latch игнорируются или заменяются новой схемой D-pad. Latch всегда выключен.
+
+Перед тестом сделай резервную копию:
 
 ```bash
 ssh trimui '
@@ -73,7 +72,25 @@ ssh trimui '
 '
 ```
 
-## Лог управления и запуска
+Чтобы проверить полностью заводские настройки 0.4 и не удалять старый файл:
+
+```bash
+ssh trimui '
+  mv /userdata/roms/ports/brkchrd/conf/brkchrd.cfg \
+     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.pre-v040
+'
+```
+
+## Порядок задних кнопок
+
+Подтверждённая раскладка отдаёт четыре задние кнопки раздельно. Если L1 работает как L2 или R1 как R2, открой Settings и переключи:
+
+- `SWAP L1/L2`
+- `SWAP R1/R2`
+
+Не переназначай глобально весь контроллер Knulli, пока не попробовал эти пункты.
+
+## Лог
 
 Посмотреть на консоли:
 
@@ -85,10 +102,10 @@ ssh trimui 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
 
 ```bash
 scp trimui:/userdata/roms/ports/brkchrd/conf/brkchrd.log \
-  ~/Downloads/brkchrd-v030.log
+  ~/Downloads/brkchrd-v040.log
 ```
 
-В 0.3 лог содержит SDL mapping и первые raw button/axis events. Он особенно важен при проверке другой версии Knulli.
+Лог содержит SDL mapping, raw-события кнопок и осей и ожидаемые роли передних октавных кнопок, L1/L2 и R1/R2.
 
 ## Удаление
 
