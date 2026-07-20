@@ -27,6 +27,6 @@ cp "$ROOT_DIR"/docs/*.md "$PACKAGE/brkchrd/docs/"
 cp "$ROOT_DIR/LICENSE" "$PACKAGE/brkchrd/licenses/GPL-3.0.txt"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$PACKAGE/brkchrd/licenses/THIRD_PARTY_NOTICES.md"
 chmod +x "$PACKAGE/BRKCHRD.sh" "$PACKAGE/brkchrd/brkchrd-sdl.aarch64"
-(cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.4.0-portmaster.zip" .)
+(cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.0-portmaster.zip" .)
 rm -rf "$STAGE"
-echo "$OUTPUT_DIR/brkchrd-v0.4.0-portmaster.zip"
+echo "$OUTPUT_DIR/brkchrd-v0.5.0-portmaster.zip"

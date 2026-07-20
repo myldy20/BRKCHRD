@@ -26,7 +26,7 @@ constexpr int kWidth = 512;
 constexpr int kHeight = 384;
 constexpr int kRate = 48000;
 constexpr int kFrames = 512;
-constexpr const char* kVersion = "0.4.0";
+constexpr const char* kVersion = "0.5.0";
 
 struct Colour { Uint8 r, g, b, a = 255; };
 constexpr Colour kBg{8, 7, 12};
@@ -83,6 +83,7 @@ std::array<std::uint8_t, 7> glyph(char value) {
     case '.': return {0x00,0x00,0x00,0x00,0x00,0x0C,0x0C}; case ':': return {0x00,0x0C,0x0C,0x00,0x0C,0x0C,0x00};
     case '<': return {0x02,0x04,0x08,0x10,0x08,0x04,0x02}; case '>': return {0x08,0x04,0x02,0x01,0x02,0x04,0x08};
     case '[': return {0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; case ']': return {0x0E,0x02,0x02,0x02,0x02,0x02,0x0E};
+    case '@': return {0x0E,0x11,0x17,0x15,0x17,0x10,0x0E};
     case '%': return {0x19,0x19,0x02,0x04,0x08,0x13,0x13}; case '=': return {0x00,0x1F,0x00,0x1F,0x00,0x00,0x00};
     case '_': return {0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; case ' ': return {0,0,0,0,0,0,0};
     default: return {0x1F,0x11,0x02,0x04,0x00,0x04,0x00};
@@ -149,6 +150,7 @@ struct UiState {
     int settings_row = 0;
     int settings_scroll = 0;
     int ui_motion = 2;
+    bool perf_fx_enabled = true;
     bool swap_left_rear = false;
     bool swap_right_rear = false;
     std::string toast;
@@ -204,13 +206,15 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
         else if (key == "bpm") p.bpm = std::clamp(static_cast<int>(value), 40, 240);
         else if (key == "mode") p.mode = static_cast<PlayMode>(std::clamp(static_cast<int>(value), 0, 3));
         else if (key == "palette" || key == "defaultpalette") ui.default_palette = std::clamp(static_cast<int>(value), 0, 2);
-        else if (key == "l1palette") ui.l1_palette = std::clamp(static_cast<int>(value), 0, 2);
+        else if (key == "l1palette" || key == "l2palette") ui.l1_palette = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "selectedpalette") ui.selected_palette = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "direction") ui.selected_direction = static_cast<Direction>(std::clamp(static_cast<int>(value), 0, 8));
         else if (key == "bank" || key == "defaultbank") ui.default_bank = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "r1bank") ui.r1_bank = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "r2bank") ui.r2_bank = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "dpadmode") ui.dpad_mode = static_cast<DpadMode>(std::clamp(static_cast<int>(value), 0, 2));
+        else if (key == "voiceleading") p.voice_leading = value != 0.0F;
+        else if (key == "perffxenabled") ui.perf_fx_enabled = value != 0.0F;
         else if (key == "uimotion") ui.ui_motion = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "swapleft") ui.swap_left_rear = value != 0.0F;
         else if (key == "swapright") ui.swap_right_rear = value != 0.0F;
@@ -225,6 +229,7 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
         else if (key == "fx2colour") { effects[1].colour = value; effect_seen[1] = true; }
     }
     p.latch = false;
+    if (!ui.perf_fx_enabled && ui.dpad_mode == DpadMode::Fx) ui.dpad_mode = DpadMode::Chord;
     synth.set_preset(p.preset); p.preset = synth.preset_index();
     for (int i = 0; i < static_cast<int>(SynthParameter::Count); ++i) if (param_seen[static_cast<std::size_t>(i)]) synth.set_parameter(static_cast<SynthParameter>(i), params[static_cast<std::size_t>(i)]);
     for (int slot = 0; slot < 2; ++slot) if (effect_seen[static_cast<std::size_t>(slot)]) synth.set_effect(slot, effects[static_cast<std::size_t>(slot)]);
@@ -235,10 +240,13 @@ void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine
     std::ofstream out(path);
     out << "key " << p.key_pc << '\n' << "octave " << p.octave << '\n' << "preset " << synth.preset_index() << '\n'
         << "bpm " << p.bpm << '\n' << "mode " << static_cast<int>(p.mode) << '\n' << "latch 0\n"
-        << "defaultpalette " << ui.default_palette << '\n' << "l1palette " << ui.l1_palette << '\n'
+        << "defaultpalette " << ui.default_palette << '\n' << "l2palette " << ui.l1_palette << '\n'
         << "selectedpalette " << ui.selected_palette << '\n' << "direction " << static_cast<int>(ui.selected_direction) << '\n'
         << "defaultbank " << ui.default_bank << '\n' << "r1bank " << ui.r1_bank << '\n' << "r2bank " << ui.r2_bank << '\n'
-        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n' << "uimotion " << ui.ui_motion << '\n'
+        << "dpadmode " << static_cast<int>(ui.dpad_mode) << '\n'
+        << "voiceleading " << (p.voice_leading ? 1 : 0) << '\n'
+        << "perffxenabled " << (ui.perf_fx_enabled ? 1 : 0) << '\n'
+        << "uimotion " << ui.ui_motion << '\n'
         << "swapleft " << (ui.swap_left_rear ? 1 : 0) << '\n' << "swapright " << (ui.swap_right_rear ? 1 : 0) << '\n';
     for (int i = 0; i < static_cast<int>(SynthParameter::Count); ++i) out << "param" << i << ' ' << synth.parameter(static_cast<SynthParameter>(i)) << '\n';
     for (int slot = 0; slot < 2; ++slot) {
@@ -317,7 +325,7 @@ void draw_chord_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
     const Colour accent = palette == 2 ? kRed : palette == 1 ? kPurpleBright : kPurple;
     panel_frame(r, x, y, w, h, accent);
     text(r, x + 12, y + 10, palette_name(palette), 2, accent);
-    micro(r, x + w - 12, y + 14, in.l1 ? "L1 HELD" : "L1 ALT", in.l1 ? kWhite : kDim, true);
+    micro(r, x + w - 12, y + 14, in.l1 ? "L2 HELD" : "L2 ALT", in.l1 ? kWhite : kDim, true);
     micro(r, x + 12, y + 35, "DPAD ARMS CHORD COLOUR", kDim);
 
     const int gx = x + 10, gy = y + 58, cw = 68, ch = 56, gap = 6;
@@ -353,7 +361,7 @@ void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& 
     const int layer = in.l1 ? 1 : 0;
     panel_frame(r, x, y, w, h, kOrange);
     text(r, x + 12, y + 10, "SOUND", 2, kOrange);
-    micro(r, x + w - 12, y + 14, layer == 0 ? "L1: ENV" : "L1 HELD", layer == 1 ? kWhite : kDim, true);
+    micro(r, x + w - 12, y + 14, layer == 0 ? "L2: ENV" : "L2 HELD", layer == 1 ? kWhite : kDim, true);
     micro(r, x + 12, y + 35, layer == 0 ? "ENGINE / TONE BANK" : "ENVELOPE / TIME BANK", kDim);
 
     const int row = ui.sound_row[static_cast<std::size_t>(layer)];
@@ -392,7 +400,7 @@ void draw_fx_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
     const auto& names = layer == 0 ? kFxBankA : kFxBankB;
     panel_frame(r, x, y, w, h, kTeal);
     text(r, x + 12, y + 10, "PERF FX", 2, kTeal);
-    micro(r, x + w - 12, y + 14, layer == 0 ? "L1: ALT" : "L1 HELD", layer == 1 ? kWhite : kDim, true);
+    micro(r, x + w - 12, y + 14, layer == 0 ? "L2: ALT" : "L2 HELD", layer == 1 ? kWhite : kDim, true);
     micro(r, x + 12, y + 35, "HOLD DPAD / RELEASE RESTORES", kDim);
     const int gx = x + 10, gy = y + 58, cw = 68, ch = 56, gap = 6;
     const auto positions = grid_positions(gx, gy, cw, ch, gap);
@@ -433,15 +441,14 @@ void draw_chord_panel(SDL_Renderer* r, const PerformanceState& p, const UiState&
 
     const std::string chord = current ? current->degree + "  " + current->name : "READY";
     text(r, x + w / 2, y + h - 28, fit(chord, 22), current ? 2 : 1, current ? kWhite : kDim, true, 0);
-    bar(r, x + 12, y + h - 9, w - 24, synth.output_peak(), accent);
 }
 
-constexpr int kSettingsCount = 16;
+constexpr int kSettingsCount = 18;
 std::string settings_name(int row) {
     static const std::array<std::string, kSettingsCount> names{
-        "BASE COLOUR", "L1 COLOUR", "BASE BANK", "R1 BANK", "R2 BANK",
+        "BASE COLOUR", "L2 COLOUR", "BASE BANK", "R1 BANK", "R2 BANK",
         "FX1 TYPE", "FX1 AMOUNT", "FX1 COLOUR", "FX2 TYPE", "FX2 AMOUNT", "FX2 COLOUR",
-        "KEY", "OCTAVE", "UI MOTION", "SWAP L1/L2", "SWAP R1/R2"};
+        "KEY", "OCTAVE", "VOICE LEAD", "PERF FX", "UI MOTION", "SWAP L1/L2", "SWAP R1/R2"};
     return names[static_cast<std::size_t>(row)];
 }
 std::string settings_value(int row, const PerformanceState& p, const UiState& ui, const SynthEngine& synth) {
@@ -452,7 +459,8 @@ std::string settings_value(int row, const PerformanceState& p, const UiState& ui
     case 5: return SynthEngine::effect_name(fx1.type); case 6: return percent(fx1.amount); case 7: return percent(fx1.colour);
     case 8: return SynthEngine::effect_name(fx2.type); case 9: return percent(fx2.amount); case 10: return percent(fx2.colour);
     case 11: return note_name(p.key_pc); case 12: return (p.octave >= 0 ? "+" : "") + std::to_string(p.octave);
-    case 13: return ui_motion_name(ui.ui_motion); case 14: return on_off(ui.swap_left_rear); case 15: return on_off(ui.swap_right_rear);
+    case 13: return on_off(p.voice_leading); case 14: return on_off(ui.perf_fx_enabled);
+    case 15: return ui_motion_name(ui.ui_motion); case 16: return on_off(ui.swap_left_rear); case 17: return on_off(ui.swap_right_rear);
     default: return "";
     }
 }
@@ -479,14 +487,14 @@ void draw_settings(SDL_Renderer* r, const PerformanceState& p, const UiState& ui
 void draw_footer(SDL_Renderer* r, const UiState& ui, const InputState& in) {
     rect(r, 0, 340, kWidth, 44, kPanel);
     if (ui.dpad_mode == DpadMode::Chord) {
-        micro(r, 14, 350, "L1 HOLD ALT COLOUR", kInk);
-        micro(r, 14, 366, "L2: SOUND / PERF FX", kDim);
+        micro(r, 14, 350, "L2 HOLD ALT COLOUR", kInk);
+        micro(r, 14, 366, ui.perf_fx_enabled ? "L1: SOUND / PERF FX" : "L1: SOUND / CHORD", kDim);
     } else if (ui.dpad_mode == DpadMode::Sound) {
         micro(r, 14, 350, "DPAD EDITS SOUND", kInk);
-        micro(r, 14, 366, "L1 HOLD SECOND PARAM BANK", kDim);
+        micro(r, 14, 366, "L2 HOLD SECOND PARAM BANK", kDim);
     } else {
         micro(r, 14, 350, "HOLD DPAD FOR PERFORMANCE FX", kInk);
-        micro(r, 14, 366, "L1 HOLD SECOND FX BANK", kDim);
+        micro(r, 14, 366, "L2 HOLD SECOND FX BANK", kDim);
     }
     micro(r, 286, 350, "R1/R2 HOLD CHORD BANKS", kInk);
     micro(r, 286, 366, "SELECT SETTINGS  START MODE", kDim);
@@ -509,6 +517,25 @@ void draw_ui(SDL_Renderer* r, const PerformanceState& p, const UiState& ui, cons
         text(r, kWidth / 2, 179, fit(ui.toast, 32), 2, kWhite, true);
     }
     if (ui.settings) draw_settings(r, p, ui, synth);
+}
+
+
+bool show_splash(SDL_Renderer* r) {
+    if (std::getenv("BRKCHRD_SKIP_SPLASH") != nullptr) return true;
+    const Uint32 until = SDL_GetTicks() + 2000U;
+    while (SDL_GetTicks() < until) {
+        SDL_Event event{};
+        while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT) return false;
+        rect(r, 0, 0, kWidth, kHeight, kBg);
+        for (int y = 0; y < kHeight; y += 24) line(r, 0, y, kWidth, y, alpha(kPurple, 18));
+        text(r, kWidth / 2, 116, "BRKCHRD", 4, kInk, true, 2);
+        line(r, 148, 164, 364, 164, kPurpleBright);
+        text(r, kWidth / 2, 194, "developed by myldy design", 1, kDim, true, 1);
+        text(r, kWidth / 2, 220, "@myldy20", 2, kPurpleBright, true, 1);
+        SDL_RenderPresent(r);
+        SDL_Delay(16);
+    }
+    return true;
 }
 
 std::optional<Face> face_button(SDL_GameControllerButton button) {
@@ -536,7 +563,7 @@ void update_chord(PerformanceState& p, UiState& ui, InputState& in,
     p.colour_palette = ui.selected_palette;
     const auto chord = make_chord(p.key_pc, p.octave, *in.active_face, bank,
                                   ui.selected_palette, ui.selected_direction);
-    const auto notes = voice_lead(chord, previous);
+    const auto notes = voice_chord(chord, previous, p.voice_leading, synth.voicing_profile());
     previous = notes; current = chord; synth.play_chord(notes);
 }
 void release_face(InputState& in, Face face, std::optional<ChordSpec>& current, SynthEngine& synth) {
@@ -585,7 +612,7 @@ void restore_performance_fx(UiState& ui, SynthEngine& synth) {
     ui.perf_fx_active = false; ui.perf_fx_direction = Direction::Center;
 }
 void update_performance_fx(UiState& ui, const InputState& in, SynthEngine& synth) {
-    if (ui.settings || ui.dpad_mode != DpadMode::Fx) { restore_performance_fx(ui, synth); return; }
+    if (ui.settings || !ui.perf_fx_enabled || ui.dpad_mode != DpadMode::Fx) { restore_performance_fx(ui, synth); return; }
     const Direction d = held_direction(in);
     if (d == Direction::Center) { restore_performance_fx(ui, synth); return; }
     const int layer = in.l1 ? 1 : 0;
@@ -607,8 +634,9 @@ void change_octave(PerformanceState& p, UiState& ui, int delta, InputState& in,
 
 void cycle_dpad_mode(UiState& ui, InputState& in, SynthEngine& synth) {
     restore_performance_fx(ui, synth);
-    const int count = static_cast<int>(DpadMode::Count);
-    ui.dpad_mode = static_cast<DpadMode>((static_cast<int>(ui.dpad_mode) + 1) % count);
+    if (ui.dpad_mode == DpadMode::Chord) ui.dpad_mode = DpadMode::Sound;
+    else if (ui.dpad_mode == DpadMode::Sound) ui.dpad_mode = ui.perf_fx_enabled ? DpadMode::Fx : DpadMode::Chord;
+    else ui.dpad_mode = DpadMode::Chord;
     ui.held_edit = 0;
     toast(ui, "DPAD: " + dpad_mode_name(ui.dpad_mode));
     if (ui.dpad_mode == DpadMode::Fx) update_performance_fx(ui, in, synth);
@@ -648,10 +676,19 @@ void edit_setting(UiState& ui, PerformanceState& p, SynthEngine& synth, int delt
         synth.set_effect(slot, settings);
     } else if (row == 11) p.key_pc = (p.key_pc + delta + 12) % 12;
     else if (row == 12) p.octave = std::clamp(p.octave + delta, -2, 2);
-    else if (row == 13) ui.ui_motion = std::clamp(ui.ui_motion + delta, 0, 2);
-    else if (row == 14) ui.swap_left_rear = !ui.swap_left_rear;
-    else if (row == 15) ui.swap_right_rear = !ui.swap_right_rear;
+    else if (row == 13) p.voice_leading = !p.voice_leading;
+    else if (row == 14) {
+        ui.perf_fx_enabled = !ui.perf_fx_enabled;
+        if (!ui.perf_fx_enabled) {
+            restore_performance_fx(ui, synth);
+            if (ui.dpad_mode == DpadMode::Fx) ui.dpad_mode = DpadMode::Chord;
+        }
+    }
+    else if (row == 15) ui.ui_motion = std::clamp(ui.ui_motion + delta, 0, 2);
+    else if (row == 16) ui.swap_left_rear = !ui.swap_left_rear;
+    else if (row == 17) ui.swap_right_rear = !ui.swap_right_rear;
 }
+
 void move_settings_row(UiState& ui, int delta) {
     ui.settings_row = (ui.settings_row + delta + kSettingsCount) % kSettingsCount;
     const int visible = 7;
@@ -724,8 +761,8 @@ void set_r2(UiState& ui, PerformanceState& p, InputState& in, bool down,
 
 void set_left_physical(UiState& ui, PerformanceState& p, InputState& in, bool first, bool down,
                        std::optional<ChordSpec>& current, std::vector<int>& previous, SynthEngine& synth) {
-    const bool logical_l1 = first != ui.swap_left_rear;
-    if (logical_l1) set_l1(ui, in, down, synth); else set_l2(ui, in, down, synth);
+    const bool physical_l1 = first != ui.swap_left_rear;
+    if (physical_l1) set_l2(ui, in, down, synth); else set_l1(ui, in, down, synth);
     if (in.active_face) update_chord(p, ui, in, current, previous, synth);
 }
 void set_right_physical(UiState& ui, PerformanceState& p, InputState& in, bool first, bool down,
@@ -742,7 +779,7 @@ void log_controller(SDL_GameController* controller) {
               << " axes=" << SDL_JoystickNumAxes(joystick)
               << " hats=" << SDL_JoystickNumHats(joystick) << '\n';
     if (char* mapping = SDL_GameControllerMapping(controller)) { std::cerr << "mapping: " << mapping << '\n'; SDL_free(mapping); }
-    std::cerr << "roles: shoulders=front octave, leftstick=L1, lefttrigger=L2, rightstick=R1, righttrigger=R2\n";
+    std::cerr << "roles: shoulders=front octave, physical L1=mode, physical L2=alt layer, R1/R2=chord banks\n";
 }
 
 } // namespace
@@ -760,6 +797,9 @@ int main(int, char**) {
     if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderSetLogicalSize(renderer, kWidth, kHeight);
+    if (!show_splash(renderer)) {
+        SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 0;
+    }
 
     SynthEngine synth(kRate); PerformanceState state; UiState ui;
     load_config(state, ui, synth); synth.set_mode(state.mode); synth.set_bpm(state.bpm); synth.set_latch(false);
@@ -775,7 +815,7 @@ int main(int, char**) {
 
     InputState input; std::optional<ChordSpec> current; std::vector<int> previous;
     bool running = true; int raw_log_budget = 96;
-    toast(ui, "BRKCHRD 0.4  PERFORMANCE WORKFLOW", 1500U);
+    toast(ui, "BRKCHRD 0.5  SMART VOICING", 1500U);
 
     while (running) {
         SDL_Event event{};
@@ -847,9 +887,9 @@ int main(int, char**) {
                 else if (key == SDLK_x) keyboard_face(Face::B);
                 else if (key == SDLK_a) keyboard_face(Face::X);
                 else if (key == SDLK_s) keyboard_face(Face::Y);
-                else if (key == SDLK_q) set_l1(ui, input, down, synth);
-                else if (key == SDLK_w && down && event.key.repeat == 0) set_l2(ui, input, true, synth);
-                else if (key == SDLK_w && !down) set_l2(ui, input, false, synth);
+                else if (key == SDLK_q && down && event.key.repeat == 0) set_l2(ui, input, true, synth);
+                else if (key == SDLK_q && !down) set_l2(ui, input, false, synth);
+                else if (key == SDLK_w) set_l1(ui, input, down, synth);
                 else if (key == SDLK_e) set_r1(ui, state, input, down, current, previous, synth);
                 else if (key == SDLK_r) set_r2(ui, state, input, down, current, previous, synth);
                 else if (key == SDLK_LEFTBRACKET && down && event.key.repeat == 0) change_octave(state, ui, -1, input, current, previous, synth);
