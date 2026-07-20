@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'tools/apply_v050.py'
+      - 'tools/apply_v050.trigger'
   workflow_dispatch:
 
 permissions:
@@ -39,6 +40,6 @@ jobs:
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
           git add src/sdl_main.cpp CMakeLists.txt tools/package_portmaster.sh .github/workflows/build.yml
-          git rm tools/apply_v050.py
+          git rm tools/apply_v050.py tools/apply_v050.trigger
           git commit -m 'Complete BRKCHRD 0.5 smart voicing workflow'
           git push origin HEAD:agent/brkchrd-alpha
