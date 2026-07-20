@@ -27,6 +27,24 @@ jobs:
           set -u
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/apply_v050.py')
+          lines = path.read_text().splitlines()
+          markers = (
+              'replace(\'\'\'        << "defaultpalette ',
+              'replace(\'\'\'        << "dpadmode ',
+              'replace(\'\'\'    std::cerr << "roles:',
+          )
+          for i, line in enumerate(lines):
+              if any(line.startswith(marker) for marker in markers):
+                  lines[i] = line.replace("replace('''", "replace(r'''", 1)
+                  for j in range(i + 1, min(i + 12, len(lines))):
+                      if "''', '''" in lines[j]:
+                          lines[j] = lines[j].replace("''', '''", "''', r'''", 1)
+                          break
+          path.write_text('\n'.join(lines) + '\n')
+          PY
           set +e
           python3 tools/apply_v050.py > /tmp/v050-migration.log 2>&1
           status=$?
