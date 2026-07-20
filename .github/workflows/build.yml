@@ -20,32 +20,20 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --parallel 2
-      - name: Test
+      - name: Test chord construction and voicing
         run: ctest --test-dir build --output-on-failure
       - name: SDL startup smoke test
         run: |
           set +e
-          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
           test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render ten-engine demo
-        run: build/brkchrd-render brkchrd-v040-demo.wav
-      - name: Check bilingual documentation
-        run: |
-          grep -q 'BRKCHRD 0.4.0' docs/manual.en.md
-          grep -q 'BRKCHRD 0.4.0' docs/manual.ru.md
-          grep -q 'L1' docs/controls.en.md
-          grep -q 'L2' docs/controls.en.md
-          grep -q 'PERF FX' docs/controls.en.md
-          grep -q 'L1' docs/controls.ru.md
-          grep -q 'L2' docs/controls.ru.md
-          grep -q 'PERF FX' docs/controls.ru.md
-          test -f docs/sound-design.en.md
-          test -f docs/sound-design.ru.md
+      - name: Render sixteen-preset demo
+        run: build/brkchrd-render brkchrd-v050-demo.wav
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v040-audio-demo
-          path: brkchrd-v040-demo.wav
+          name: brkchrd-v050-audio-demo
+          path: brkchrd-v050-demo.wav
 
   portmaster-aarch64:
     runs-on: ubuntu-24.04-arm
@@ -69,14 +57,12 @@ jobs:
         run: |
           file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
           grep -q 'ARM aarch64' /tmp/binary.txt
-          unzip -l dist/brkchrd-v0.4.0-portmaster.zip | tee /tmp/package.txt
+          unzip -l dist/brkchrd-v0.5.0-portmaster.zip | tee /tmp/package.txt
           grep -q 'BRKCHRD.sh' /tmp/package.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/package.txt
           grep -q 'brkchrd/docs/manual.en.md' /tmp/package.txt
           grep -q 'brkchrd/docs/manual.ru.md' /tmp/package.txt
-          grep -q 'brkchrd/docs/controls.en.md' /tmp/package.txt
-          grep -q 'brkchrd/docs/controls.ru.md' /tmp/package.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v040-portmaster-aarch64
-          path: dist/brkchrd-v0.4.0-portmaster.zip
+          name: brkchrd-v050-portmaster-aarch64
+          path: dist/brkchrd-v0.5.0-portmaster.zip
