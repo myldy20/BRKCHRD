@@ -18,7 +18,7 @@ if(BRKCHRD_ENABLE_SANITIZERS AND NOT MSVC)
   target_link_options(brkchrd_sanitizers INTERFACE -fno-omit-frame-pointer -fsanitize=address,undefined)
 endif()
 
-add_library(brkchrd_core src/config.cpp src/music.cpp src/synth.cpp)
+add_library(brkchrd_core src/config.cpp src/input_safety.cpp src/music.cpp src/synth.cpp)
 target_include_directories(brkchrd_core PUBLIC include)
 target_compile_features(brkchrd_core PUBLIC cxx_std_20)
 target_link_libraries(brkchrd_core PRIVATE brkchrd_warnings brkchrd_sanitizers)
