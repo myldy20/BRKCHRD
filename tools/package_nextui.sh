@@ -2,15 +2,25 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-BUILD_DIR=${1:-"$ROOT_DIR/build-aarch64"}
-OUTPUT_DIR=${2:-"$ROOT_DIR/dist"}
+BUILD_INPUT=${1:-"$ROOT_DIR/build-aarch64"}
+OUTPUT_INPUT=${2:-"$ROOT_DIR/dist"}
+
+BUILD_DIR=$(CDPATH= cd -- "$BUILD_INPUT" && pwd)
+mkdir -p "$OUTPUT_INPUT"
+OUTPUT_DIR=$(CDPATH= cd -- "$OUTPUT_INPUT" && pwd)
+
 SOURCE="$ROOT_DIR/packaging/nextui/tg5040"
 STAGE="$OUTPUT_DIR/nextui-stage"
 PAK="$STAGE/Tools/tg5040/BRKCHRD.pak"
 MEDIA="$STAGE/Tools/tg5040/.media"
 
+[ -x "$BUILD_DIR/brkchrd-sdl" ] || {
+  echo "missing binary: $BUILD_DIR/brkchrd-sdl" >&2
+  exit 1
+}
+
 rm -rf "$STAGE"
-mkdir -p "$PAK/docs" "$PAK/licenses" "$MEDIA" "$OUTPUT_DIR"
+mkdir -p "$PAK/docs" "$PAK/licenses" "$MEDIA"
 
 cp "$SOURCE/BRKCHRD.pak/launch.sh" "$PAK/launch.sh"
 cp "$SOURCE/BRKCHRD.pak/README.md" "$PAK/README.md"
