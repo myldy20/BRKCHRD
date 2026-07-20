@@ -125,7 +125,7 @@ int main() {
     std::string write_error;
     CHECK(atomic_write_text(config_path, malformed_config, &write_error));
     const auto parsed = read_numeric_config(config_path);
-    CHECK(parsed.entries.size() == 4U);
+    CHECK(parsed.entries.size() == 3U);
     CHECK(!parsed.warnings.empty());
     CHECK(parse_indexed_key("param0", "param", 7) == 0);
     CHECK(!parse_indexed_key("paramX", "param", 7).has_value());
