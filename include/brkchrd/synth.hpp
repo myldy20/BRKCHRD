@@ -33,6 +33,7 @@ public:
     void set_preset(int index);
     int preset_index() const;
     PresetInfo preset_info() const;
+    VoicingProfile voicing_profile() const;
     static int preset_count();
 
     void set_parameter(SynthParameter parameter, float value);
