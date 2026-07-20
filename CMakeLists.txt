@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(brkchrd VERSION 0.5.0 LANGUAGES CXX)
+project(brkchrd VERSION 0.5.1 LANGUAGES CXX)
 
 option(BRKCHRD_BUILD_SDL "Build SDL2 handheld application" ON)
 option(BRKCHRD_BUILD_TESTS "Build tests" ON)

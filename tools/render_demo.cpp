@@ -6,7 +6,7 @@
 #include <vector>
 
 int main(int argc, char** argv) {
-    const std::string path = argc > 1 ? argv[1] : "brkchrd-v050-demo.wav";
+    const std::string path = argc > 1 ? argv[1] : "brkchrd-v051-demo.wav";
     constexpr int rate = 48000;
     brkchrd::SynthEngine synth(rate);
     std::vector<float> output;

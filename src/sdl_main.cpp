@@ -26,7 +26,7 @@ constexpr int kWidth = 512;
 constexpr int kHeight = 384;
 constexpr int kRate = 48000;
 constexpr int kFrames = 512;
-constexpr const char* kVersion = "0.5.0";
+constexpr const char* kVersion = "0.5.1";
 
 struct Colour { Uint8 r, g, b, a = 255; };
 constexpr Colour kBg{8, 7, 12};
@@ -84,6 +84,7 @@ std::array<std::uint8_t, 7> glyph(char value) {
     case '<': return {0x02,0x04,0x08,0x10,0x08,0x04,0x02}; case '>': return {0x08,0x04,0x02,0x01,0x02,0x04,0x08};
     case '[': return {0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; case ']': return {0x0E,0x02,0x02,0x02,0x02,0x02,0x0E};
     case '@': return {0x0E,0x11,0x17,0x15,0x17,0x10,0x0E};
+    case '&': return {0x0C,0x12,0x14,0x08,0x15,0x12,0x0D};
     case '%': return {0x19,0x19,0x02,0x04,0x08,0x13,0x13}; case '=': return {0x00,0x1F,0x00,0x1F,0x00,0x00,0x00};
     case '_': return {0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; case ' ': return {0,0,0,0,0,0,0};
     default: return {0x1F,0x11,0x02,0x04,0x00,0x04,0x00};
@@ -114,6 +115,9 @@ void text(SDL_Renderer* r, int x, int y, std::string_view value, int scale, Colo
         }
         cursor += 5 * scale + tracking;
     }
+}
+void text_right(SDL_Renderer* r, int right, int y, std::string_view value, int scale, Colour c, int tracking = 1) {
+    text(r, right - text_width(value, scale, tracking), y, value, scale, c, false, tracking);
 }
 void micro(SDL_Renderer* r, int x, int y, std::string_view value, Colour c, bool centered = false) {
     text(r, x, y, value, 1, c, centered, 0);
@@ -346,13 +350,21 @@ void draw_chord_mode(SDL_Renderer* r, const UiState& ui, const InputState& in) {
     micro(r, x + w / 2, y + h - 18, fit(selected, 43), kInk, true);
 }
 
+void preset_row(SDL_Renderer* r, int x, int y, int w, const std::string& value,
+                bool active, Colour accent) {
+    rect(r, x, y, w, 52, active ? accent : kPanel2);
+    outline(r, x, y, w, 52, active ? kWhite : alpha(accent, 120));
+    micro(r, x + 9, y + 7, "PRESET", active ? kBg : kDim);
+    text(r, x + w / 2, y + 24, fit(value, 17), 2, active ? kBg : kInk, true, 0);
+}
+
 void parameter_row(SDL_Renderer* r, int x, int y, int w, const std::string& name,
                    const std::string& value, bool active, Colour accent, float amount = -1.0F) {
     rect(r, x, y, w, 36, active ? accent : kPanel2);
     outline(r, x, y, w, 36, active ? kWhite : alpha(accent, 120));
     text(r, x + 9, y + 7, fit(name, 18), 1, active ? kBg : kInk, false, 0);
-    text(r, x + w - 9, y + 7, fit(value, 17), 1, active ? kBg : kDim, true, 0);
-    if (amount >= 0.0F) bar(r, x + 9, y + 25, w - 18, amount, active ? kBg : accent);
+    text_right(r, x + w - 14, y + 7, fit(value, 17), 1, active ? kBg : kDim, 0);
+    if (amount >= 0.0F) bar(r, x + 9, y + 25, w - 18, amount, active ? kWhite : accent);
 }
 
 void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
@@ -367,11 +379,16 @@ void draw_sound_mode(SDL_Renderer* r, const PerformanceState& p, const UiState& 
     const int row = ui.sound_row[static_cast<std::size_t>(layer)];
     if (layer == 0) {
         const auto info = synth.preset_info();
-        const std::array<std::string, 4> names{"PRESET", "TONE", "BODY", "MOTION"};
-        const std::array<std::string, 4> values{info.name, percent(synth.parameter(SynthParameter::Tone)),
+        preset_row(r, x + 10, y + 58, w - 20, info.name, row == 0, kOrange);
+        const std::array<std::string, 3> names{"TONE", "BODY", "MOTION"};
+        const std::array<std::string, 3> values{percent(synth.parameter(SynthParameter::Tone)),
             percent(synth.parameter(SynthParameter::Body)), percent(synth.parameter(SynthParameter::Motion))};
-        const std::array<float, 4> bars{-1.0F, synth.parameter(SynthParameter::Tone), synth.parameter(SynthParameter::Body), synth.parameter(SynthParameter::Motion)};
-        for (int i = 0; i < 4; ++i) parameter_row(r, x + 10, y + 58 + i * 48, w - 20, names[static_cast<std::size_t>(i)], values[static_cast<std::size_t>(i)], i == row, kOrange, bars[static_cast<std::size_t>(i)]);
+        const std::array<float, 3> bars{synth.parameter(SynthParameter::Tone), synth.parameter(SynthParameter::Body), synth.parameter(SynthParameter::Motion)};
+        for (int i = 0; i < 3; ++i) {
+            parameter_row(r, x + 10, y + 119 + i * 45, w - 20,
+                          names[static_cast<std::size_t>(i)], values[static_cast<std::size_t>(i)],
+                          i + 1 == row, kOrange, bars[static_cast<std::size_t>(i)]);
+        }
         micro(r, x + 12, y + h - 19, fit(info.character, 42), kDim);
     } else {
         const std::array<std::string, 5> names{"ATTACK", "RELEASE", "SPREAD", "BPM", "PLAY MODE"};
@@ -478,9 +495,9 @@ void draw_settings(SDL_Renderer* r, const PerformanceState& p, const UiState& ui
         rect(r, 28, 78 + i * 38, 456, 31, active ? kBlue : kPanel2);
         outline(r, 28, 78 + i * 38, 456, 31, active ? kWhite : alpha(kBlue, 100));
         text(r, 40, 88 + i * 38, settings_name(row), 1, active ? kBg : kInk, false, 0);
-        text(r, 452, 88 + i * 38, fit(settings_value(row, p, ui, synth), 22), 1, active ? kBg : kDim, true, 0);
+        text_right(r, 466, 88 + i * 38, fit(settings_value(row, p, ui, synth), 22), 1, active ? kBg : kDim, 0);
     }
-    micro(r, 28, 352, "START+SELECT: SAVE & EXIT", kDim);
+    micro(r, 28, 352, "START+SELECT: SAVE AND EXIT", kDim);
     micro(r, 484, 352, std::to_string(ui.settings_row + 1) + "/" + std::to_string(kSettingsCount), kDim, true);
 }
 
