@@ -33,4 +33,4 @@ cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$PACKAGE/brkchrd/licenses/THIRD_PARTY_NOT
 chmod +x "$PACKAGE/BRKCHRD.sh" "$PACKAGE/brkchrd/brkchrd-sdl.aarch64"
 (cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.1-portmaster.zip" .)
 rm -rf "$STAGE"
-echo "$OUTPUT_DIR/brkchrd-v0.5.0-portmaster.zip"
+echo "$OUTPUT_DIR/brkchrd-v0.5.1-portmaster.zip"
