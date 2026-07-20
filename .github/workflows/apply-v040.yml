@@ -26,6 +26,7 @@ jobs:
           set -u
           test -f tools/v040source/src-00 || exit 0
           cat tools/v040source/src-* > src/sdl_main.cpp
+          sed -i 's/0x0E}};/0x0E};/' src/sdl_main.cpp
           sudo apt-get update -qq
           sudo apt-get install -y -qq libsdl2-dev
           set +e
@@ -46,7 +47,7 @@ jobs:
             git push origin HEAD:agent/brkchrd-alpha
             exit "$status"
           fi
-          rm -f tools/v040-build.log
+          if [ -f tools/v040-build.log ]; then git rm tools/v040-build.log; fi
           git add src/sdl_main.cpp
           git rm -r tools/v040source
           if [ -d tools/v040parts ]; then git rm -r tools/v040parts; fi
