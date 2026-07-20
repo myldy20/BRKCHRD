@@ -1,45 +1,42 @@
-# Installing BRKCHRD 0.5.1 on TrimUI Brick / Knulli
+# Installing BRKCHRD 0.5.2 on TrimUI Brick / Knulli
 
 ## Requirements
 
 - TrimUI Brick or another compatible AArch64 handheld;
 - Knulli with PortMaster support;
-- the `brkchrd-v0.5.1-portmaster.zip` release file;
-- approximately 5 MB of free space;
-- SSH is optional but is the fastest method for development builds.
+- `brkchrd-v0.5.2-portmaster.zip`;
+- approximately 5 MB of free space.
 
-## Method A: SD-card installation
+## Install from the SD card
 
-1. Shut down the handheld cleanly and remove the SD card.
-2. Open the PortMaster ports directory.
-3. Extract the **contents** of `brkchrd-v0.5.1-portmaster.zip` into:
+1. Shut down the handheld cleanly and mount its SD card.
+2. Extract the **contents** of `brkchrd-v0.5.2-portmaster.zip` into:
 
 ```text
 /userdata/roms/ports/
 ```
 
-4. Confirm these paths exist:
+The resulting installation includes:
 
 ```text
 /userdata/roms/ports/BRKCHRD.sh
 /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
 /userdata/roms/ports/brkchrd/cover.jpg
+/userdata/roms/ports/brkchrd/docs/
 ```
 
-5. Return the card, boot Knulli and refresh the game list if BRKCHRD is not visible immediately.
+Return the card, boot Knulli and refresh the game list if BRKCHRD is not visible immediately.
 
-The package also contains top-level `screenshot.jpg` and `cover.jpg` for PortMaster metadata and the complete documentation under `brkchrd/docs/`.
-
-## Method B: SSH installation
+## Install over SSH
 
 Assuming the archive is in `~/Downloads` and the handheld IP is `10.53.219.134`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.5.1-portmaster.zip \
+scp ~/Downloads/brkchrd-v0.5.2-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 
 ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.5.1-portmaster.zip \
+  unzip -o /userdata/system/brkchrd-v0.5.2-portmaster.zip \
     -d /userdata/roms/ports/ &&
   chmod +x /userdata/roms/ports/BRKCHRD.sh &&
   chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
@@ -49,11 +46,11 @@ ssh root@10.53.219.134 '
 
 Refresh Ports or reboot after installation.
 
-## Upgrading from 0.5.0
+## Upgrade
 
-The executable and documentation can be overwritten in place. The configuration format remains compatible.
+Extract 0.5.2 over an existing installation. The configuration format is compatible; the new `language` and `chorddpad` values use English and TOGGLE defaults when absent.
 
-Before testing factory defaults, preserve the old file:
+Back up the configuration before resetting or testing factory defaults:
 
 ```bash
 ssh root@10.53.219.134 '
@@ -63,26 +60,16 @@ ssh root@10.53.219.134 '
 '
 ```
 
-To start with defaults, rename the configuration:
-
-```bash
-ssh root@10.53.219.134 '
-  mv /userdata/roms/ports/brkchrd/conf/brkchrd.cfg \
-     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.pre-v051 \
-     2>/dev/null || true
-'
-```
+To reset BRKCHRD, rename `brkchrd.cfg`; the application will create a new file on the next save.
 
 ## Runtime data
-
-The launcher sets HOME and XDG directories to the persistent package location:
 
 ```text
 /userdata/roms/ports/brkchrd/conf/brkchrd.cfg
 /userdata/roms/ports/brkchrd/conf/brkchrd.log
 ```
 
-Do not place personal settings inside the executable directory outside `conf/`, because a future package extraction may overwrite them.
+The language, CHORD DPAD mode and all other settings are stored in this configuration.
 
 ## Uninstall
 
@@ -93,12 +80,4 @@ Back up `brkchrd.cfg` if required, then remove:
 /userdata/roms/ports/brkchrd/
 ```
 
-## First verification
-
-1. Confirm the two-second logo appears.
-2. Open SOUND and verify the preset name stays inside the large card.
-3. Select Motion and confirm its bar remains visible.
-4. Open Settings and confirm values have right padding and the footer says `SAVE AND EXIT`.
-5. Test Start+Select and verify configuration is restored on the next launch.
-
-For launch failures, see [Troubleshooting](troubleshooting.en.md).
+For launch failures, see [Troubleshooting](troubleshooting.en.md). Physical release validation is documented separately in the contributor hardware checklist.

@@ -1,45 +1,61 @@
-# BRKCHRD 0.5.1 Controls — English
+# BRKCHRD 0.5.2 Controls — English
 
-## Confirmed TrimUI Brick mapping
+## TrimUI Brick mapping
 
 On the tested Knulli controller profile:
 
-- front illuminated left: SDL left shoulder;
-- front illuminated right: SDL right shoulder;
-- rear L1: SDL left-stick button;
-- rear L2: SDL left trigger;
-- rear R1: SDL right-stick button;
-- rear R2: SDL right trigger;
-- printed ABXY follow the physical Brick labels, not SDL logical letters.
+- front illuminated left/right: octave down/up;
+- rear L1: cycle the D-pad screen;
+- rear L2: hold the alternate layer;
+- rear R1/R2: hold alternate chord banks;
+- ABXY: play the functional chord layout.
 
-Use `SWAP L1/L2` or `SWAP R1/R2` when a firmware exposes the physical order differently.
+Use `SWAP L1/L2` or `SWAP R1/R2` if a firmware exposes the rear controls in the opposite physical order.
 
 ## Global controls
 
-| Control | Tap / hold | Action |
-| --- | --- | --- |
-| Front illuminated left | Tap | Octave down |
-| Front illuminated right | Tap | Octave up |
-| L1 | Tap | Cycle CHORD → SOUND → PERF FX |
-| L2 | Hold | Alternate layer for the current D-pad screen |
-| R1 | Hold | Temporary chord bank assigned to R1 |
-| R2 | Hold | Temporary chord bank assigned to R2 |
-| ABXY | Hold | Play functional chords |
-| Select | Tap | Open or close Settings |
-| Start | Tap | Next PAD / STRUM / ARP / PULSE mode |
-| Start | Hold | All notes off |
-| Start + Select | Chord | Save configuration and exit |
+| Control | Action |
+| --- | --- |
+| Front illuminated left/right | Octave down/up |
+| L1 press | CHORD → SOUND → PERF FX |
+| L2 hold | Alternate palette, parameter layer or PERF FX bank |
+| R1/R2 hold | Temporary configured chord bank |
+| ABXY hold | Play chords |
+| Select | Open or close Settings |
+| Start tap | Next PAD / STRUM / ARP / PULSE mode |
+| Start hold | All notes off |
+| Start + Select | Save and exit |
 
-When `PERF FX = OFF`, L1 cycles CHORD ↔ SOUND only.
+When `PERF FX = OFF`, L1 cycles only CHORD ↔ SOUND.
+
+## LANGUAGE / ЯЗЫК
+
+- `EN`: English interface;
+- `RU`: Russian interface with native Cyrillic bitmap glyphs.
+
+The change is immediate and persists after restart. Preset names and chord symbols remain their standard names.
 
 ## CHORD mode
 
-D-pad directions select one stored harmonic colour. The selection remains active while SOUND, PERF FX or Settings is shown.
+The normal and L2-held palettes can each be CLASSIC, EXTENDED or DARK. Hold L2 while using the D-pad to access the alternate palette.
 
-- press an unselected direction: store that colour;
-- press the currently selected direction again: return to BASE;
-- hold L2 while selecting: use the configured alternate palette;
-- the normal and L2 palettes can each be CLASSIC, EXTENDED or DARK.
+### CHORD DPAD = TOGGLE
+
+- press a direction to store its colour;
+- the colour remains active after release and on other screens;
+- press the same direction again in the same palette to return to BASE;
+- selecting from the L2 palette stores that palette and colour after L2 is released.
+
+### CHORD DPAD = HOLD
+
+- centred D-pad means BASE;
+- hold a direction to apply its colour temporarily;
+- release the D-pad to return immediately to BASE;
+- press or release a second direction to move into or out of a diagonal;
+- a sounding chord is rebuilt on every gesture change;
+- L2 chooses the alternate palette for the duration of the hold.
+
+HOLD does not overwrite the colour stored by TOGGLE. Returning to TOGGLE restores the stored selection.
 
 ## SOUND mode
 
@@ -49,7 +65,7 @@ Normal layer:
 | --- | --- |
 | Preset | Previous / next factory sound |
 | Tone | Darker / brighter |
-| Body | Less / more body |
+| Body | Less / more weight |
 | Motion | Less / more movement |
 
 L2-held layer:
@@ -57,50 +73,35 @@ L2-held layer:
 | Up/Down selection | Left/Right action |
 | --- | --- |
 | Attack | Faster / slower attack |
-| Release | Shorter / longer release |
+| Release | Shorter / longer tail |
 | Spread | Narrower / wider |
 | BPM | Lower / higher tempo |
 | Play Mode | Previous / next mode |
 
-Holding Left/Right accelerates after a short delay. ABXY remain playable during editing.
+Holding Left/Right accelerates editing. ABXY and R1/R2 remain playable.
 
 ## PERF FX mode
 
-Hold a direction to engage a temporary two-effect gesture. Release the direction to restore the normal FX1/FX2 chain. Hold L2 for the second, more extreme bank.
+Hold a direction to substitute a temporary two-effect gesture. Release it to restore the saved FX1/FX2 chain. Hold L2 for the second gesture bank.
 
-The centre position is dry with respect to performance substitution; it does not bypass the configured base effects.
+## Settings
 
-## Chord-bank modifiers
-
-R1 and R2 are momentary. Each can be assigned CORE, DIATONIC+ or BORROWED. If both are held, R2 has priority. The display and any sounding chord update immediately.
-
-## Settings navigation
-
-- Up/Down: select row;
-- Left/Right: change value;
-- hold Left/Right: accelerated repeat where applicable;
+- Up/Down: select a row;
+- Left/Right: change the value;
 - Select: close and save;
 - Start+Select: save and exit.
 
-Important switches:
-
-- `VOICE LEAD = OFF`: deterministic notes and exact octave changes;
-- `VOICE LEAD = ON`: route-sensitive nearby inversions anchored to the selected octave;
-- `PERF FX = OFF`: remove PERF FX from the L1 cycle without disabling FX1/FX2;
-- `UI MOTION`: Off, Low or Full animation;
-- `SWAP L1/L2` and `SWAP R1/R2`: local correction for firmware button order.
-
-All values are right-aligned with safe frame padding in 0.5.1.
+Important options include `VOICE LEAD`, `PERF FX`, `UI MOTION`, button swaps, `LANGUAGE / ЯЗЫК` and `CHORD DPAD`.
 
 ## Desktop test mapping
 
 | Keyboard | Handheld equivalent |
 | --- | --- |
-| Z / X / A / S | Physical B / A / Y / X chord buttons |
+| Z / X / A / S | Physical B / A / Y / X |
 | `[` / `]` | Octave down / up |
 | Q | L1 mode cycle |
 | W | L2 alternate layer |
-| E / R | R1 / R2 chord banks |
+| E / R | R1 / R2 banks |
 | Arrow keys | D-pad |
 | Enter | Start |
 | Space | Select |

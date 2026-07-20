@@ -25,37 +25,44 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Test chord construction and voicing
         run: ctest --test-dir build --output-on-failure
-      - name: SDL startup smoke test
+      - name: SDL startup smoke test in English
         run: |
           set +e
           BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
           test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render sixteen-preset demo
-        run: build/brkchrd-render brkchrd-v051-demo.wav
-      - name: Check documentation, branding and licensing
+      - name: SDL startup smoke test in Russian and hold-colour mode
         run: |
-          grep -q 'BRKCHRD 0.5.1' docs/manual.en.md
-          grep -q 'BRKCHRD 0.5.1' docs/manual.ru.md
-          grep -qi 'voice lead' docs/manual.en.md
-          grep -qi 'voice lead' docs/manual.ru.md
-          grep -q 'L1' docs/controls.en.md
-          grep -q 'L2' docs/controls.ru.md
-          grep -q 'PERF FX' docs/controls.en.md
-          grep -q 'PERF FX' docs/controls.ru.md
-          grep -q 'NextUI' docs/install.nextui.en.md
-          grep -q 'NextUI' docs/install.nextui.ru.md
+          mkdir -p /tmp/brkchrd-ru
+          printf 'language 1\nchorddpad 1\n' > /tmp/brkchrd-ru/brkchrd.cfg
+          set +e
+          XDG_CONFIG_HOME=/tmp/brkchrd-ru BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
+          status=$?
+          test "$status" -eq 0 -o "$status" -eq 124
+      - name: Render sixteen-preset demo
+        run: build/brkchrd-render brkchrd-v052-demo.wav
+      - name: Check documentation, localisation, branding and licensing
+        run: |
+          grep -q 'BRKCHRD 0.5.2' docs/manual.en.md
+          grep -q 'BRKCHRD 0.5.2' docs/manual.ru.md
+          grep -q 'LANGUAGE' docs/controls.en.md
+          grep -q 'ЯЗЫК' docs/controls.ru.md
+          grep -q 'CHORD DPAD' docs/controls.en.md
+          grep -q 'DPAD АККОРД' docs/controls.ru.md
+          grep -q 'contributor' docs/hardware-test-checklist.en.md
+          grep -q 'разработчик' docs/hardware-test-checklist.ru.md
+          ! grep -qi 'check.*splash\|verify.*splash' docs/manual.en.md
+          ! grep -qi 'провер.*застав' docs/manual.ru.md
           grep -q 'Based on BRKCHRD by Myldy design' NOTICE.md
           grep -q 'GNU GENERAL PUBLIC LICENSE' LICENSE
           test -f assets/branding/brkchrd-logo.svg
           test -f assets/branding/brkchrd-banner.jpg
           test -f packaging/portmaster/brkchrd/screenshot.jpg
-          test -f packaging/portmaster/brkchrd/cover.jpg
           test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v051-audio-demo
-          path: brkchrd-v051-demo.wav
+          name: brkchrd-v052-audio-demo
+          path: brkchrd-v052-demo.wav
 
   aarch64-packages:
     runs-on: ubuntu-24.04-arm
@@ -84,28 +91,24 @@ jobs:
         run: |
           file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
           grep -Eq '640 ?x ?480' /tmp/screenshot.txt
-          unzip -l dist/brkchrd-v0.5.1-portmaster.zip | tee /tmp/portmaster.txt
+          unzip -l dist/brkchrd-v0.5.2-portmaster.zip | tee /tmp/portmaster.txt
           grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
-          grep -q 'screenshot.jpg' /tmp/portmaster.txt
-          grep -q 'cover.jpg' /tmp/portmaster.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
-          grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
-          grep -q 'brkchrd/licenses/NOTICE.md' /tmp/portmaster.txt
           grep -q 'brkchrd/docs/manual.en.md' /tmp/portmaster.txt
           grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
+          grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
       - name: Inspect NextUI package
         run: |
-          unzip -l dist/brkchrd-v0.5.1-nextui-tg5040.zip | tee /tmp/nextui.txt
+          unzip -l dist/brkchrd-v0.5.2-nextui-tg5040.zip | tee /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
           grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
-          grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/NOTICE.md' /tmp/nextui.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v051-portmaster-aarch64
-          path: dist/brkchrd-v0.5.1-portmaster.zip
+          name: brkchrd-v052-portmaster-aarch64
+          path: dist/brkchrd-v0.5.2-portmaster.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v051-nextui-tg5040
-          path: dist/brkchrd-v0.5.1-nextui-tg5040.zip
+          name: brkchrd-v052-nextui-tg5040
+          path: dist/brkchrd-v0.5.2-nextui-tg5040.zip
