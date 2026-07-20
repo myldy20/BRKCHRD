@@ -1,16 +1,21 @@
-# BRKCHRD 0.3.0
+# BRKCHRD 0.4.0
 
 Extract this package into the PortMaster ports directory. Full English and Russian documentation is included under `brkchrd/docs/`.
 
 TrimUI Brick controls:
 
 - glowing front left/right: octave down/up;
-- either rear L button: next left-panel mode;
-- either rear R button: next right-panel mode;
-- D-pad: chord colour or focused-panel editing;
-- short Select: latch;
-- hold Select: all notes off;
+- hold L1: alternate layer for CHORD, SOUND or PERF FX;
+- press L2: cycle CHORD → SOUND → PERF FX;
+- hold R1/R2: configured alternate chord banks;
+- D-pad: select chord colour, edit sound or hold momentary performance FX;
+- ABXY: play functional chords at all times;
+- Select: open/close Settings;
+- Start tap: PAD / STRUM / ARP / PULSE;
+- Start hold: all notes off;
 - Start + Select: save and exit.
+
+Settings configure the default/L1 colour palettes, base/R1/R2 chord banks, two base effect slots, key, octave, UI motion and rear-button swaps.
 
 Runtime files:
 
@@ -19,4 +24,4 @@ brkchrd/conf/brkchrd.cfg
 brkchrd/conf/brkchrd.log
 ```
 
-The log includes the detected SDL controller mapping and a limited raw-input trace.
+The log includes the SDL mapping, raw-input trace and expected v0.4 roles.
