@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'tools/v040parts/**'
+      - 'tools/v040source/**'
   workflow_dispatch:
 
 permissions:
@@ -24,22 +24,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ ! -f tools/v040parts/part-00 ]; then
-            echo 'v040 parts already consumed'
+          if [ ! -f tools/v040source/src-00 ]; then
+            echo 'v040 source chunks already consumed'
             exit 0
           fi
-          cat >/tmp/v040-parts.sha256 <<'EOF'
-          f4f9c2d8a04235daf9fce37a019160d8f6dd0c8f2389c04df5b7946f3e85ce2e  tools/v040parts/part-00
-          1e5d0fec96faad6a9536b42a2a54842740f134e0f1c096993055080437a2360a  tools/v040parts/part-01
-          adca619db7c0b34a1f087dfef603f70eb5492c795312b1b7a66a8411c18d85dc  tools/v040parts/part-02
-          5bd7e40c7194635a2339ac4d9583afe45850b9bfb64dcc16e8cb9f1a31b83909  tools/v040parts/part-03
-          0b460f4ee189f978e46f521fa66a057b9cfde350d571afb461379e51e3a96cd3  tools/v040parts/part-04
-          cba467f19daa8a081e7f1096139b112ce20da096d6c9a5bedb03bc9bdae7a350  tools/v040parts/part-05
-          4abb35a4efeab470ef9f987d6159f69c695185767d31729f1cdf9d70e50781a0  tools/v040parts/part-06
-          c4c3bed34dfb98b6ed0b030bd97f297733800d32bb71256a087a6e8d36e1f8ce  tools/v040parts/part-07
+          cat >/tmp/v040-source.sha256 <<'EOF'
+          8791b89588f703cf43e68a6dca0be7c618478fbb321618ab5ed06505b09c7401  tools/v040source/src-00
+          af505aac4911e298306987badbb4007178aaa01bb763bc3ca69a36dff0abf252  tools/v040source/src-01
+          5d980858f64053409da4f7bba9411267ec72c7360421b8aa28d416cf2261d695  tools/v040source/src-02
+          f36e0fe48bae5dff63dfc410d596ab5c9f920b8ec7df99062afaf306fcaa0f34  tools/v040source/src-03
+          1f5980b46b301e0b715de3ef090f09c99d9860f19fa626dac9f7762efdd85e7c  tools/v040source/src-04
+          f1a63e156f280598299a4d2d313336205327a377d269dd091a04ab512ec2af2c  tools/v040source/src-05
+          706c938320e22502e5985f32283240852cbcb702216e3e639e0298731573de96  tools/v040source/src-06
+          4d4bedafe50bbbd520c90da7d0749f8b3b81fef2787d2dec600056105fe301fd  tools/v040source/src-07
+          78ef5ddbd3ea9ea79aee506cfdfbce86d0649f7fc1a0dc96df66e735f37d58cb  tools/v040source/src-08
+          865d5cef82efa9b93a86cc20930f45db9dad2cc6ee05eb8736147c137d17177d  tools/v040source/src-09
+          4a94033f00a4c6ae158cb53e7251218fefd847119dcfb6b877b5a12c03ffc9a9  tools/v040source/src-10
+          4ac5b38978fff0e1d0056c2a5c7f47650fc0ec3c621d4e7af287debcfddeec69  tools/v040source/src-11
           EOF
-          sha256sum -c /tmp/v040-parts.sha256
-          cat tools/v040parts/part-* | base64 -d >/tmp/sdl_main.cpp
+          sha256sum -c /tmp/v040-source.sha256
+          cat tools/v040source/src-* >/tmp/sdl_main.cpp
           echo 'f43224c9b8b2654741c0131d80857ef4b212605079586cb0825dfbf80141bb93  /tmp/sdl_main.cpp' | sha256sum -c -
           cp /tmp/sdl_main.cpp src/sdl_main.cpp
           sudo apt-get update -qq
@@ -55,6 +59,7 @@ jobs:
           git config user.name 'myldy20'
           git config user.email 'myldy20@users.noreply.github.com'
           git add src/sdl_main.cpp
-          git rm -r tools/v040parts
+          git rm -r tools/v040source
+          if [ -d tools/v040parts ]; then git rm -r tools/v040parts; fi
           git commit -m 'Rework performance controls for BRKCHRD 0.4'
           git push origin HEAD:agent/brkchrd-alpha
