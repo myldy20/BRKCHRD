@@ -83,7 +83,7 @@ jobs:
       - name: Inspect PortMaster package
         run: |
           file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
-          grep -q '640 x 480' /tmp/screenshot.txt
+          grep -Eq '640 ?x ?480' /tmp/screenshot.txt
           unzip -l dist/brkchrd-v0.5.1-portmaster.zip | tee /tmp/portmaster.txt
           grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
           grep -q 'screenshot.jpg' /tmp/portmaster.txt
