@@ -1,0 +1,77 @@
+name: release-v051
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'release-trigger/v0.5.1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build, test and package AArch64 release
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
+            bash -ec '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+              cmake --build build-release --parallel 2
+              ctest --test-dir build-release --output-on-failure
+              strip build-release/brkchrd-sdl
+              sh ./tools/package_portmaster.sh build-release dist
+              sh ./tools/package_nextui.sh build-release dist
+              build-release/brkchrd-render dist/brkchrd-v0.5.1-demo.wav
+            '
+      - name: Verify release assets
+        run: |
+          set -euo pipefail
+          file build-release/brkchrd-sdl | grep -q 'ARM aarch64'
+          unzip -t dist/brkchrd-v0.5.1-portmaster.zip
+          unzip -t dist/brkchrd-v0.5.1-nextui-tg5040.zip
+          file dist/brkchrd-v0.5.1-demo.wav | grep -q '48000 Hz'
+          test -s dist/brkchrd-v0.5.1-portmaster.zip
+          test -s dist/brkchrd-v0.5.1-nextui-tg5040.zip
+          test -s dist/brkchrd-v0.5.1-demo.wav
+          sha256sum \
+            dist/brkchrd-v0.5.1-portmaster.zip \
+            dist/brkchrd-v0.5.1-nextui-tg5040.zip \
+            dist/brkchrd-v0.5.1-demo.wav \
+            > dist/SHA256SUMS.txt
+      - name: Create or refresh GitHub Release
+        run: |
+          set -euo pipefail
+          if gh release view v0.5.1 >/dev/null 2>&1; then
+            gh release upload v0.5.1 \
+              dist/brkchrd-v0.5.1-portmaster.zip \
+              dist/brkchrd-v0.5.1-nextui-tg5040.zip \
+              dist/brkchrd-v0.5.1-demo.wav \
+              dist/SHA256SUMS.txt \
+              --clobber
+            gh release edit v0.5.1 \
+              --title 'BRKCHRD 0.5.1' \
+              --notes-file docs/releases/v0.5.1.md
+          else
+            gh release create v0.5.1 \
+              dist/brkchrd-v0.5.1-portmaster.zip \
+              dist/brkchrd-v0.5.1-nextui-tg5040.zip \
+              dist/brkchrd-v0.5.1-demo.wav \
+              dist/SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title 'BRKCHRD 0.5.1' \
+              --notes-file docs/releases/v0.5.1.md
+          fi
