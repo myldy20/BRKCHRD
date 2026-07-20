@@ -1,0 +1,58 @@
+ ui, synth); }
+                        input.select = false;
+                    }
+                }
+            }
+
+            if (event.type == SDL_CONTROLLERAXISMOTION) {
+                const bool down = event.caxis.value > 15000;
+                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT) set_left_physical(ui, state, input, false, down, current, previous, synth);
+                if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) set_right_physical(ui, state, input, false, down, current, previous, synth);
+            }
+
+            if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+                const bool down = event.type == SDL_KEYDOWN; const SDL_Keycode key = event.key.keysym.sym;
+                auto keyboard_face = [&](Face face) {
+                    if (down) { input.face[static_cast<std::size_t>(face)] = true; input.active_face = face; update_chord(state, ui, input, current, previous, synth); }
+                    else { release_face(input, face, current, synth); if (input.active_face) update_chord(state, ui, input, current, previous, synth); }
+                };
+                if (key == SDLK_z) keyboard_face(Face::A);
+                else if (key == SDLK_x) keyboard_face(Face::B);
+                else if (key == SDLK_a) keyboard_face(Face::X);
+                else if (key == SDLK_s) keyboard_face(Face::Y);
+                else if (key == SDLK_q) set_l1(ui, input, down, synth);
+                else if (key == SDLK_w && down && event.key.repeat == 0) set_l2(ui, input, true, synth);
+                else if (key == SDLK_w && !down) set_l2(ui, input, false, synth);
+                else if (key == SDLK_e) set_r1(ui, state, input, down, current, previous, synth);
+                else if (key == SDLK_r) set_r2(ui, state, input, down, current, previous, synth);
+                else if (key == SDLK_LEFTBRACKET && down && event.key.repeat == 0) change_octave(state, ui, -1, input, current, previous, synth);
+                else if (key == SDLK_RIGHTBRACKET && down && event.key.repeat == 0) change_octave(state, ui, 1, input, current, previous, synth);
+                else if (key == SDLK_UP || key == SDLK_DOWN || key == SDLK_LEFT || key == SDLK_RIGHT) {
+                    const auto button = key == SDLK_UP ? SDL_CONTROLLER_BUTTON_DPAD_UP : key == SDLK_DOWN ? SDL_CONTROLLER_BUTTON_DPAD_DOWN : key == SDLK_LEFT ? SDL_CONTROLLER_BUTTON_DPAD_LEFT : SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+                    set_dpad(input, button, down);
+                    if (ui.dpad_mode == DpadMode::Fx && !ui.settings) update_performance_fx(ui, input, synth);
+                    else if (down) handle_dpad_press(ui, state, input, synth, button, current, previous);
+                    if (!down && (key == SDLK_LEFT || key == SDLK_RIGHT)) ui.held_edit = 0;
+                } else if (key == SDLK_RETURN) {
+                    if (down && event.key.repeat == 0) { input.start = true; input.start_since = SDL_GetTicks(); input.start_long = false; }
+                    else if (!down) { if (!input.start_long) { state.mode = static_cast<PlayMode>((static_cast<int>(state.mode) + 1) % 4); synth.set_mode(state.mode); } input.start = false; }
+                } else if (key == SDLK_SPACE && down && event.key.repeat == 0) {
+                    restore_performance_fx(ui, synth); ui.settings = !ui.settings; if (!ui.settings) save_config(state, ui, synth);
+                } else if (key == SDLK_ESCAPE && down) running = false;
+            }
+        }
+
+        if (input.start && !input.select && !input.start_long && SDL_GetTicks() - input.start_since > 850U) {
+            input.start_long = true; synth.all_notes_off(); current.reset(); input.active_face.reset(); input.face.fill(false); toast(ui, "ALL NOTES OFF", 1200U);
+        }
+        repeat_edit(ui, state, input, synth);
+        if (SDL_GetTicks() >= ui.toast_until) ui.toast.clear();
+        draw_ui(renderer, state, ui, input, current, synth);
+        SDL_RenderPresent(renderer); SDL_Delay(8);
+    }
+
+    restore_performance_fx(ui, synth); save_config(state, ui, synth); synth.all_notes_off();
+    if (audio != 0) SDL_CloseAudioDevice(audio);
+    if (controller) SDL_GameControllerClose(controller);
+    SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 0;
+}
