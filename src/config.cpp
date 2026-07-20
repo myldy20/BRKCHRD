@@ -1,5 +1,6 @@
 #include "brkchrd/config.hpp"
 
+#include <cerrno>
 #include <charconv>
 #include <cmath>
 #include <cstdio>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <system_error>
+#include <utility>
 
 #if !defined(_WIN32)
 #include <fcntl.h>
