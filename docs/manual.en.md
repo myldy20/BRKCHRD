@@ -1,25 +1,28 @@
-# BRKCHRD 0.5.1 Manual — English
+# BRKCHRD 0.5.2 Manual — English
 
-## 1. What BRKCHRD is
+## What BRKCHRD is
 
-BRKCHRD is a live harmony and songwriting instrument for TrimUI Brick. It is not a menu of unrelated chord names: the four face buttons form a functional set that can be played as a compact progression instrument. The D-pad changes harmonic colour, edits synthesis parameters or performs momentary effects, while R1/R2 expose temporary alternate chord banks.
+BRKCHRD is a live harmony and songwriting instrument for TrimUI Brick. The four face buttons form a functional chord set rather than a list of unrelated chord names. The D-pad changes chord colour, edits the synth or performs temporary effects, while R1/R2 open alternate chord banks for as long as they are held.
 
-The application runs entirely on the handheld. No MIDI controller, computer or network connection is required after installation.
+The application runs entirely on the handheld. No computer, MIDI controller or network connection is required after installation.
 
-## 2. First minute
+## Quick start
 
-1. Launch the application and wait for the two-second Myldy design splash.
-2. In the default CORE bank play B, A, Y and X. They represent I, V, vi and IV.
-3. In CHORD mode press a D-pad direction to select a chord colour. Press the selected direction again to return to BASE.
-4. Press L1 to enter SOUND. ABXY remain playable and keep the selected chord colour.
-5. Use Up/Down to select Preset, Tone, Body or Motion and Left/Right to change it.
-6. Hold L2 to edit Attack, Release, Spread, BPM and Play Mode.
-7. Press L1 again to enter PERF FX, unless it has been disabled in Settings.
-8. Open Settings with Select and choose whether Voice Lead should be deterministic or expressive.
+1. Play B, A, Y and X. In the default CORE bank they are I, V, vi and IV.
+2. In CHORD, use the D-pad to add a harmonic colour.
+3. Press L1 to move between CHORD, SOUND and PERF FX.
+4. In SOUND, use Up/Down to choose a parameter and Left/Right to edit it. Hold L2 for the second parameter layer.
+5. Open Settings with Select to choose the language, D-pad behaviour, chord banks, effects and voicing options.
 
-## 3. Chord banks
+## Language
 
-The active face-button layout is always shown on the right. In the default CORE bank:
+Set `LANGUAGE / ЯЗЫК` to `EN` or `RU` in Settings. The interface changes immediately and the choice is saved. The Russian mode uses native Cyrillic glyphs in the built-in bitmap font; it is not transliteration.
+
+Preset names and standard chord symbols remain their original musical names so that patches and chords can be discussed consistently in either language.
+
+## Chord banks
+
+The right panel always shows the current face-button layout. In CORE:
 
 ```text
         X = IV
@@ -27,100 +30,88 @@ Y = vi          A = V
         B = I
 ```
 
-R1 and R2 are momentary modifiers. Settings independently assign CORE, DIATONIC+ or BORROWED to the base, R1 and R2 positions. Holding a rear button immediately rebuilds a currently sounding chord with the selected bank.
+R1 and R2 are momentary bank modifiers. Settings can assign CORE, DIATONIC+ or BORROWED independently to the base, R1 and R2 states. A sounding chord is rebuilt immediately when the bank changes.
 
-## 4. Chord colours
+## Chord colours and CHORD DPAD
 
-CHORD mode offers three palettes:
+CHORD offers three palettes:
 
-- **CLASSIC:** practical triads, sevenths, sixths, sus chords and add9 colours;
+- **CLASSIC:** practical triads, sevenths, sixths, sus and add9 colours;
 - **EXTENDED:** ninths, elevenths, 6/9, half-diminished and Lydian-style structures;
-- **DARK:** power, quartal, cluster, tritone and deliberately tense colours.
+- **DARK:** power, quartal, tritone and deliberately tense colours.
 
-The colour engine preserves the quality of the current scale degree. A minor degree receives minor extensions; a diminished degree receives diminished or half-diminished structures. Some DARK colours are intentionally dissonant rather than errors.
+The normal and L2-held palettes are configured independently. Minor and diminished scale degrees receive musically appropriate minor or diminished extensions.
 
-The normal and L2-held palettes are configured independently.
+`CHORD DPAD` determines how a colour is applied:
 
-## 5. Stable and live voicing
+### TOGGLE
+
+Press a direction to store that colour. It remains active while you play, enter SOUND or use PERF FX. Press the same direction again in the same palette to return to BASE.
+
+### HOLD
+
+The chord is BASE while the D-pad is centred. Hold a direction to apply its colour only for the duration of the hold; release it to return immediately to BASE. Diagonals respond naturally when a second direction is pressed or released. A sounding chord is rebuilt as the gesture changes.
+
+Switching back to TOGGLE restores the previously stored toggle colour; HOLD does not erase it.
+
+## Stable and live voicing
 
 ### Voice Lead Off — default
 
-The same face button with the same bank, colour, octave and preset always produces the same MIDI notes. The order in which chords were played does not matter. The front octave buttons move every note by exactly twelve semitones.
-
-Use this mode when learning the instrument, recording repeatable parts or comparing presets.
+The same face button with the same bank, colour, octave and preset always produces the same notes. Front octave controls move every voice by exactly twelve semitones.
 
 ### Voice Lead On
 
-The instrument searches nearby inversions relative to the previously played chord. Clockwise and counter-clockwise movement through ABXY may therefore produce different voicings. Unlike the old 0.4 behaviour, the search remains anchored near the octave selected by the front controls.
+BRKCHRD searches nearby inversions relative to the previous chord. Different routes through ABXY may produce different voicings, but the result remains anchored near the octave selected by the front controls.
 
-Use this mode when smooth movement and evolving inversions are more important than exact repeatability.
+## Instrument-aware voicing
 
-## 6. Instrument-aware voicing
+The displayed chord symbol and the played orchestration are deliberately separate. Each preset can omit redundant notes or spread voices differently:
 
-The harmonic chord and the played orchestration are deliberately separate. The displayed symbol remains correct, while each preset profile can omit redundant notes or spread voices differently:
-
-- Keys and Organ: compact, clear shell voicings;
+- Keys and Organ: compact shell voicings;
 - Pad and Choir: wider structures up to five notes;
-- Pluck: fewer voices in a higher useful register;
-- Heavy: power/shell structures without dense low extensions;
+- Pluck: fewer voices in a higher register;
+- Heavy: controlled power/shell structures;
 - Bass: root, fifth and octave.
 
-This is why the same `m11` can remain lush on strings but controlled on a sub or distorted patch.
+## Sound editing
 
-## 7. Sound editing
+The normal SOUND layer contains Preset, Tone, Body and Motion. Hold L2 for Attack, Release, Spread, BPM and Play Mode.
 
-In SOUND, the normal layer contains:
+The preset has a dedicated large card. Parameter values have safe right padding, and the selected continuous parameter keeps a visible white value bar.
 
-- **Preset:** one of sixteen factory sounds;
-- **Tone:** spectral brightness and filter position;
-- **Body:** low-mid weight, oscillator mixture or model-specific density;
-- **Motion:** drift, modulation depth and movement.
+## Play modes
 
-Hold L2 for:
-
-- **Attack:** fade-in time;
-- **Release:** tail after key release;
-- **Spread:** detune and stereo distribution;
-- **BPM:** timing for ARP, PULSE and time-dependent gestures;
-- **Play Mode:** PAD, STRUM, ARP or PULSE.
-
-Version 0.5.1 gives the preset a dedicated large card. Parameter values are right-aligned with safe padding, and the selected parameter keeps a visible white bar.
-
-## 8. Play modes
-
-- **PAD:** all chord notes start together;
-- **STRUM:** notes enter in sequence, with spacing influenced by Motion;
-- **ARP:** one note at a time, cycling through the current voicing;
+- **PAD:** all notes start together;
+- **STRUM:** notes enter in sequence;
+- **ARP:** notes are played one at a time;
 - **PULSE:** the whole chord is retriggered rhythmically.
 
-Tap Start to cycle play modes. Hold Start to stop every active voice immediately.
+Tap Start to change mode. Hold Start to stop all voices.
 
-## 9. Effects
+## Effects
 
-Two serial base slots, FX1 and FX2, support Off, Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb. Their type, amount and colour are edited in Settings.
+FX1 and FX2 are saved serial effects. PERF FX temporarily substitutes a two-effect gesture while a D-pad direction is held and restores FX1/FX2 on release.
 
-PERF FX is a momentary performance layer. A held D-pad direction temporarily replaces the base pair with a gesture combination. Releasing the D-pad, leaving the screen or opening Settings restores the saved base chain exactly.
+Set `PERF FX = OFF` to remove PERF FX from the L1 cycle without disabling FX1 or FX2.
 
-Set `PERF FX = OFF` to remove PERF FX from the L1 cycle. This does not disable FX1 or FX2.
+## Settings
 
-## 10. Settings
-
-Settings contains:
+Settings contains twenty rows:
 
 - base and L2 colour palettes;
 - base, R1 and R2 chord banks;
 - FX1/FX2 type, amount and colour;
-- musical key and octave;
-- Voice Lead On/Off;
-- PERF FX On/Off;
-- UI Motion Off/Low/Full;
-- Swap L1/L2 and Swap R1/R2 for firmware mapping differences.
+- key and octave;
+- Voice Lead and PERF FX;
+- UI Motion;
+- rear-button swaps;
+- `LANGUAGE / ЯЗЫК`;
+- `CHORD DPAD`.
 
-Use Up/Down to select a row and Left/Right to edit it. Percentages and values are right-aligned inside the frame. The footer reads `START+SELECT: SAVE AND EXIT`.
+Use Up/Down to select and Left/Right to change a value. Select closes and saves. Start+Select saves and exits.
 
-## 11. Saving and files
-
-Closing Settings saves the current state. Start+Select saves and exits from the application.
+## Files
 
 PortMaster configuration and log:
 
@@ -136,11 +127,4 @@ SD/.userdata/tg5040/brkchrd/brkchrd.cfg
 SD/.userdata/tg5040/logs/BRKCHRD.txt
 ```
 
-## 12. Exit and recovery
-
-- Start+Select: save and exit;
-- Start hold: emergency all-notes-off;
-- if the program does not launch, read the runtime log before reinstalling;
-- to test factory defaults, rename `brkchrd.cfg` rather than deleting it permanently.
-
-See [Controls](controls.en.md), [Sound design](sound-design.en.md), [Installation](install.en.md), [NextUI installation](install.nextui.en.md) and [Troubleshooting](troubleshooting.en.md) for focused guides.
+See [Controls](controls.en.md), [Sound design](sound-design.en.md), [Installation](install.en.md), [NextUI installation](install.nextui.en.md) and [Troubleshooting](troubleshooting.en.md) for focused guides. The hardware checklist is intended for contributors and release testing, not normal use.
