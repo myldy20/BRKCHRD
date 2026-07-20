@@ -1,83 +1,114 @@
-# BRKCHRD 0.4.0 Troubleshooting — English
+# BRKCHRD 0.5.1 Troubleshooting — English
 
-## The application does not appear under Ports
+## PortMaster entry is missing
+
+Verify the launcher and executable:
 
 ```bash
-ssh trimui 'ls -l "/userdata/roms/ports/BRKCHRD.sh" /userdata/roms/ports/brkchrd/*.aarch64'
-ssh trimui 'chmod +x "/userdata/roms/ports/BRKCHRD.sh" /userdata/roms/ports/brkchrd/*.aarch64 && sync'
+ssh root@DEVICE_IP '
+  ls -l /userdata/roms/ports/BRKCHRD.sh \
+        /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
+  chmod +x /userdata/roms/ports/BRKCHRD.sh \
+           /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64
+  sync
+'
 ```
 
-Refresh the game list or reboot.
+Refresh the game list or reboot. The release archive must be extracted into `/userdata/roms/ports/`, not copied there unopened.
+
+## NextUI card or image is missing
+
+Verify exact case-sensitive paths:
+
+```text
+Tools/tg5040/BRKCHRD.pak/launch.sh
+Tools/tg5040/.media/BRKCHRD.png
+```
+
+The image is a sibling of the Pak, not a file inside it.
 
 ## Immediate exit
 
-```bash
-ssh trimui 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
-```
-
-Typical causes are a missing binary, incompatible architecture, SDL audio/video initialisation failure or an incomplete PortMaster environment.
-
-## L1 behaves like L2, or R1 behaves like R2
-
-Open Settings and toggle:
-
-- `SWAP L1/L2`
-- `SWAP R1/R2`
-
-The confirmed mapping exposes all four rear buttons separately, but another Knulli/controller order may reverse the two controls on one side. The SWAP settings change only BRKCHRD and are safer than global remapping.
-
-Expected v0.4 roles:
-
-```text
-left shoulder / right shoulder = front octave controls
-left stick button              = L1
-left trigger                   = L2
-right stick button             = R1
-right trigger                  = R2
-```
-
-Inspect the first log lines:
+PortMaster log:
 
 ```bash
-ssh trimui 'sed -n "1,160p" /userdata/roms/ports/brkchrd/conf/brkchrd.log'
+ssh root@DEVICE_IP 'cat /userdata/roms/ports/brkchrd/conf/brkchrd.log'
 ```
 
-Look for `mapping:`, `roles:`, `controller button down:`, `raw button down:` and `raw axis:`.
-
-## L2 does not change D-pad mode
-
-L2 changes mode only on a new press and while Settings is closed. The header should cycle:
+NextUI log:
 
 ```text
-CHORD → SOUND → PERF FX
+SD/.userdata/tg5040/logs/BRKCHRD.txt
 ```
 
-If holding the intended L2 instead changes the left layer, turn on `SWAP L1/L2`.
+Common causes are a missing executable, wrong architecture, missing execute permission, SDL initialisation failure or an incomplete extraction.
+
+## L1 and L2 are reversed
+
+Expected 0.5.1 roles:
+
+```text
+L1 press = cycle CHORD / SOUND / PERF FX
+L2 hold  = alternate layer
+```
+
+Toggle `SWAP L1/L2` in Settings when the physical firmware order is reversed. `SWAP R1/R2` performs the equivalent correction on the right side.
+
+## L1 does not show PERF FX
+
+Check `PERF FX` in Settings. When it is Off, L1 intentionally cycles CHORD ↔ SOUND only. Turning it On restores the three-screen cycle.
+
+## A chord changes octave depending on the route
+
+Check `VOICE LEAD`:
+
+- Off: the same button, bank, colour, octave and preset must always return the same notes;
+- On: route-sensitive inversions are intentional, though the result remains anchored near the selected octave.
+
+For an exact octave test, turn Voice Lead Off and compare the same button before and after one front octave press. Every note should move twelve semitones.
+
+## A DARK chord sounds dissonant
+
+Several DARK colours are deliberately tense: Cluster, Tritone, Crunch and augmented structures are not intended to sound consonant on every preset. Compare BASE or CLASSIC before reporting a construction problem.
+
+A useful chord bug report includes key, face button, base/R1/R2 bank, palette, D-pad direction, octave, Voice Lead state and preset.
+
+## Preset text is clipped or a value bar disappears
+
+These were 0.5.0 UI defects corrected in 0.5.1. Confirm the splash/header reports 0.5.1 and replace the executable if it still reports 0.5.0.
+
+In 0.5.1:
+
+- Preset uses a large dedicated card;
+- values have right padding;
+- an active parameter has a white bar;
+- Settings says `SAVE AND EXIT`.
 
 ## Chord colour disappears in SOUND
 
-The selected colour should remain stored. SOUND does not intentionally reset it. Return to CHORD and inspect the active label. A colour is reset only by pressing the same direction again while its palette is displayed.
+SOUND does not reset the stored colour. Return to CHORD and inspect the active label. A selected colour returns to BASE only when the same direction is pressed again while its palette is active.
 
-Note that simply holding L1 shows another palette but does not select anything.
+Holding L2 only displays the alternate palette; it does not change the stored colour until a direction is pressed.
 
-## Performance FX remain stuck
+## Performance FX stay active
 
-PERF FX should restore base FX when:
+The base chain should be restored when:
 
-- the D-pad returns to centre;
-- L2 changes mode;
+- D-pad returns to centre;
+- L1 leaves PERF FX;
+- PERF FX is disabled;
 - Select opens Settings;
-- the program exits normally.
+- the application exits normally.
 
-If a direction appears released but the effect remains, capture `brkchrd.log` and state the exact D-pad direction. Use Start hold for all-notes-off; opening Settings also forces FX restoration.
+Opening Settings forces restoration. Include the exact direction and log if a gesture remains stuck.
 
-## Performance FX sound unlike the label
+## Reverse-ish or Shimmer-ish are not literal
 
-The v0.4 labels describe musical gestures. Reverse-ish and Shimmer-ish are combinations of the current Delay/Reverb/Crusher/Chorus blocks, not dedicated reverse-buffer or pitch-shimmer algorithms. This is a known DSP limitation rather than a controller error.
+These labels describe musical gestures made from the current lightweight Chorus, Phaser, Tremolo, Drive, Crusher, Delay and Reverb blocks. They are not dedicated reverse-buffer or pitch-shimmer processors.
 
-## ABXY labels or positions are wrong
+## Wrong ABXY position lights up
 
-The intended physical layout is:
+Expected physical layout:
 
 ```text
         X
@@ -85,33 +116,34 @@ The intended physical layout is:
         B
 ```
 
-Internally Knulli may expose bottom B as SDL A, right A as SDL B, left Y as SDL X and top X as SDL Y. BRKCHRD translates by position. If the wrong on-screen position lights up, attach the log; that indicates another firmware mapping.
-
-## Return to BASE
-
-In CHORD mode, display the palette containing the stored direction and press that direction again. If the stored colour came from the L1 palette, hold L1 while pressing it again.
+Knulli may expose different SDL logical letters. BRKCHRD translates by physical position. If the wrong screen position responds, attach the opening controller mapping and raw input lines from the log.
 
 ## All-notes-off
 
-Hold Start for approximately 0.85 seconds. Latch no longer exists in 0.4.
+Hold Start for about 0.85 seconds. This stops voices immediately. There is no latch mode.
 
-## Crackles or high CPU use
+## Crackles, overheating or high CPU
 
-- test with base FX1/FX2 set to Off;
-- avoid maximum Release with dense extended chords during initial testing;
-- compare normal operation with PERF FX held;
-- test UI Motion at Off;
-- compare built-in speaker and headphones;
-- report engine, chord colour, bank, play mode, D-pad direction and CPU load.
+1. set FX1 and FX2 to Off;
+2. turn UI Motion Off;
+3. use PAD with a short Release and BASE chord;
+4. compare a three-note Keys preset with a wide Pad or PERF FX;
+5. test headphones and the built-in speaker separately;
+6. report preset, chord, play mode, effects, hardware volume and observed CPU load.
 
 ## Reset configuration
 
+PortMaster:
+
 ```bash
-ssh trimui 'mv /userdata/roms/ports/brkchrd/conf/brkchrd.cfg /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.bak'
+ssh root@DEVICE_IP '
+  mv /userdata/roms/ports/brkchrd/conf/brkchrd.cfg \
+     /userdata/roms/ports/brkchrd/conf/brkchrd.cfg.bak
+'
 ```
 
-The next launch uses factory defaults.
+NextUI: rename `SD/.userdata/tg5040/brkchrd/brkchrd.cfg`.
 
-## Useful bug report
+## Useful issue report
 
-Include Knulli version, exact archive name, `brkchrd.log`, physical button and expected role, active D-pad mode, L1 state, R1/R2 state, stored chord colour, base FX settings, speaker/headphones, latency, crackles, CPU load and a photo/video for layout or control problems.
+Include device, firmware/NextUI version, exact release archive, log, configuration or relevant settings, physical input sequence, expected result, actual result, output route, and photo/video for layout defects. Describe a minimal reproducible sequence rather than only the final sound.
