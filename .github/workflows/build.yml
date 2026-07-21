@@ -15,6 +15,7 @@ concurrency:
 jobs:
   linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -25,6 +26,8 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Run executable chord, config, input and DSP checks
         run: ctest --test-dir build --output-on-failure
+      - name: Run full audio-path audit
+        run: build/brkchrd-audio-audit audio-audit.csv | tee audio-audit.log
       - name: SDL startup smoke test in English
         run: |
           set +e
@@ -64,6 +67,12 @@ jobs:
         with:
           name: brkchrd-v052-audio-demo
           path: brkchrd-v052-demo.wav
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brkchrd-audio-audit
+          path: |
+            audio-audit.csv
+            audio-audit.log
 
   sanitizers:
     runs-on: ubuntu-latest
