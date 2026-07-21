@@ -78,7 +78,9 @@ jobs:
       - name: SDL startup smoke test in Russian and hold-colour mode
         run: |
           mkdir -p /tmp/brkchrd-ru
-          printf 'language 1\nchorddpad 1\n' > /tmp/brkchrd-ru/brkchrd.cfg
+          printf 'language 1
+chorddpad 1
+' > /tmp/brkchrd-ru/brkchrd.cfg
           set +e
           XDG_CONFIG_HOME=/tmp/brkchrd-ru BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
