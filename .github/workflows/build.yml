@@ -6,34 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-ui-themes:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/brkchrd-060-truth-safety
-          fetch-depth: 0
-      - name: Apply palettes, documentation and version update
-        run: |
-          test -f tools/apply-ui-themes-fixed.py || exit 0
-          python3 tools/apply-ui-themes-fixed.py > ui-theme-migration.log 2>&1
-          cat ui-theme-migration.log
-          git checkout -- .github/workflows/build.yml
-          rm -f ui-theme-migration.log
-          git config user.name 'myldy20'
-          git config user.email 'myldy20@users.noreply.github.com'
-          git add -A
-          git commit -m 'Add selectable UI palettes and unobtrusive chord colour gestures'
-          git push origin HEAD:agent/brkchrd-060-truth-safety
-
   linux:
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -58,21 +37,37 @@ jobs:
       - name: SDL startup smoke test in Russian and hold-colour mode
         run: |
           mkdir -p /tmp/brkchrd-ru
-          printf 'language 1\nchorddpad 1\n' > /tmp/brkchrd-ru/brkchrd.cfg
+          printf 'language 1\nchorddpad 1\nuitheme 1\n' > /tmp/brkchrd-ru/brkchrd.cfg
           set +e
           XDG_CONFIG_HOME=/tmp/brkchrd-ru BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 3s build/brkchrd-sdl
           status=$?
           test "$status" -eq 0 -o "$status" -eq 124
-      - name: Render sixteen-preset demo
-        run: build/brkchrd-render brkchrd-v052-demo.wav
-      - name: Check documentation, localisation, branding and licensing
+      - name: SDL startup smoke test for all UI palettes
         run: |
-          grep -q 'BRKCHRD 0.5.2' docs/manual.en.md
-          grep -q 'BRKCHRD 0.5.2' docs/manual.ru.md
+          for theme in 0 1 2 3 4; do
+            dir="/tmp/brkchrd-theme-$theme"
+            mkdir -p "$dir"
+            printf 'uitheme %s\n' "$theme" > "$dir/brkchrd.cfg"
+            set +e
+            XDG_CONFIG_HOME="$dir" BRKCHRD_SKIP_SPLASH=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 2s build/brkchrd-sdl
+            status=$?
+            set -e
+            test "$status" -eq 0 -o "$status" -eq 124
+          done
+      - name: Render sixteen-preset demo
+        run: build/brkchrd-render brkchrd-v060-demo.wav
+      - name: Check documentation, localisation, palettes, branding and licensing
+        run: |
+          grep -q 'BRKCHRD 0.6.0' docs/manual.en.md
+          grep -q 'BRKCHRD 0.6.0' docs/manual.ru.md
           grep -q 'LANGUAGE' docs/controls.en.md
           grep -q 'ЯЗЫК' docs/controls.ru.md
           grep -q 'CHORD DPAD' docs/controls.en.md
           grep -q 'DPAD АККОРД' docs/controls.ru.md
+          grep -q 'UI PALETTE' docs/controls.en.md
+          grep -q 'ПАЛИТРА UI' docs/controls.ru.md
+          grep -q 'kUiThemes' src/sdl_main.cpp
+          grep -q 'uitheme' src/sdl_main.cpp
           grep -q 'contributor' docs/hardware-test-checklist.en.md
           grep -q 'разработчик' docs/hardware-test-checklist.ru.md
           ! grep -qi 'check.*splash\|verify.*splash' docs/manual.en.md
@@ -86,8 +81,8 @@ jobs:
           test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v052-audio-demo
-          path: brkchrd-v052-demo.wav
+          name: brkchrd-v060-audio-demo
+          path: brkchrd-v060-demo.wav
       - uses: actions/upload-artifact@v4
         with:
           name: brkchrd-audio-audit
@@ -140,7 +135,7 @@ jobs:
         run: |
           file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
           grep -Eq '640 ?x ?480' /tmp/screenshot.txt
-          unzip -l dist/brkchrd-v0.5.2-portmaster.zip | tee /tmp/portmaster.txt
+          unzip -l dist/brkchrd-v0.6.0-portmaster.zip | tee /tmp/portmaster.txt
           grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
           grep -q 'brkchrd/install_metadata.sh' /tmp/portmaster.txt
@@ -150,16 +145,16 @@ jobs:
           grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
       - name: Inspect NextUI package
         run: |
-          unzip -l dist/brkchrd-v0.5.2-nextui-tg5040.zip | tee /tmp/nextui.txt
+          unzip -l dist/brkchrd-v0.6.0-nextui-tg5040.zip | tee /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
           grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v052-portmaster-aarch64
-          path: dist/brkchrd-v0.5.2-portmaster.zip
+          name: brkchrd-v060-portmaster-aarch64
+          path: dist/brkchrd-v0.6.0-portmaster.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v052-nextui-tg5040
-          path: dist/brkchrd-v0.5.2-nextui-tg5040.zip
+          name: brkchrd-v060-nextui-tg5040
+          path: dist/brkchrd-v0.6.0-nextui-tg5040.zip
