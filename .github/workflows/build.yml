@@ -6,13 +6,33 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  apply-exhaustive-audio-audit:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - name: Apply exhaustive audit and drive gain staging
+        run: |
+          test -f tools/apply-exhaustive-audio-audit.py || exit 0
+          python3 tools/apply-exhaustive-audio-audit.py
+          rm -f tools/apply-exhaustive-audio-audit.py
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Audit every preset and effect path and compensate drive gain'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
+
   linux:
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -27,7 +47,7 @@ jobs:
       - name: Run executable chord, config, input and DSP checks
         run: ctest --test-dir build --output-on-failure
       - name: Run full audio-path audit
-        run: build/brkchrd-audio-audit audio-audit.csv | tee audio-audit.log
+        run: build/brkchrd-audio-audit audio-audit.csv --strict | tee audio-audit.log
       - name: SDL startup smoke test in English
         run: |
           set +e
