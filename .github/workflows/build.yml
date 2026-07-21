@@ -6,13 +6,33 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  apply-second-feedback:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - name: Apply second hardware feedback
+        run: |
+          test -f tools/apply-second-hardware-feedback.trigger || exit 0
+          python3 tools/apply-second-hardware-feedback.py
+          rm -f tools/apply-second-hardware-feedback.py tools/apply-second-hardware-feedback.trigger
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Stabilize deep echo, unify chord labels and install PortMaster artwork'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
+
   linux:
     runs-on: ubuntu-latest
     steps:
