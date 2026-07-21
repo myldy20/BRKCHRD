@@ -438,7 +438,11 @@ struct SynthEngine::Impl {
         }
         case EffectType::Drive: {
             const float gain = 1.0F + wet * (2.0F + colour * 12.0F);
-            out_l = soft_clip(left, gain); out_r = soft_clip(right, gain);
+            const float compensation = 0.78F - wet * 0.10F;
+            const float driven_l = soft_clip(left, gain) * compensation;
+            const float driven_r = soft_clip(right, gain) * compensation;
+            out_l = left * (1.0F - wet) + driven_l * wet;
+            out_r = right * (1.0F - wet) + driven_r * wet;
             break;
         }
         case EffectType::Crusher: {

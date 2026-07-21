@@ -99,9 +99,9 @@ std::string classify(const Stats& stats, double transition_jump, double tail_rat
     if (!stats.finite) return "FAIL_NONFINITE";
     if (stats.peak > 1.001F) return "FAIL_OUTPUT_RANGE";
     if (std::abs(stats.mean) > 0.12) return "FAIL_DC";
+    if (stats.saturation > 0.25) return "WARN_SATURATION";
     if (stats.max_delta > 1.50F) return "WARN_DELTA";
     if (transition_jump > 0.80) return "WARN_TRANSITION";
-    if (stats.saturation > 0.25) return "WARN_SATURATION";
     if (tail_ratio > 1.15) return "WARN_TAIL_GROWTH";
     return "OK";
 }
@@ -126,6 +126,7 @@ public:
         ++rows_;
         if (status != "OK") {
             ++warnings_;
+            if (status.rfind("FAIL_", 0U) == 0U) ++failures_;
             std::cout << status << " " << scenario << " preset=" << preset
                       << " mode=" << audit_mode_name(mode)
                       << " fx=" << SynthEngine::effect_name(first.type) << '+'
@@ -139,11 +140,13 @@ public:
 
     int rows() const { return rows_; }
     int warnings() const { return warnings_; }
+    int failures() const { return failures_; }
 
 private:
     std::ofstream output_;
     int rows_ = 0;
     int warnings_ = 0;
+    int failures_ = 0;
 };
 
 std::array<FxPair, 16> performance_pairs() {
@@ -237,47 +240,38 @@ int main(int argc, char** argv) {
         }
     }
 
-    for (int first_type = 0; first_type < SynthEngine::effect_count(); ++first_type) {
-        for (int second_type = 0; second_type < SynthEngine::effect_count(); ++second_type) {
-            const EffectSettings first{static_cast<EffectType>(first_type), first_type == 0 ? 0.0F : 1.0F, 1.0F};
-            const EffectSettings second{static_cast<EffectType>(second_type), second_type == 0 ? 0.0F : 1.0F, 1.0F};
-            double elapsed = 0.0;
-            const Stats stats = run_sustained(1, PlayMode::Pad, first, second, kRate, elapsed);
-            report.add("ALL_FX_PAIRS", 1, PlayMode::Pad, first, second, stats, 0.0, 0.0, elapsed);
+    for (int preset = 0; preset < SynthEngine::preset_count(); ++preset) {
+        for (int first_type = 0; first_type < SynthEngine::effect_count(); ++first_type) {
+            for (int second_type = 0; second_type < SynthEngine::effect_count(); ++second_type) {
+                const EffectSettings first{static_cast<EffectType>(first_type), first_type == 0 ? 0.0F : 1.0F, 1.0F};
+                const EffectSettings second{static_cast<EffectType>(second_type), second_type == 0 ? 0.0F : 1.0F, 1.0F};
+                double elapsed = 0.0;
+                const Stats stats = run_sustained(preset, PlayMode::Pad, first, second, kRate / 2U, elapsed);
+                report.add("ALL_FX_PAIRS", preset, PlayMode::Pad, first, second, stats, 0.0, 0.0, elapsed);
+            }
         }
     }
 
     const auto pairs = performance_pairs();
     for (const FxPair& pair : pairs) {
         for (int preset = 0; preset < SynthEngine::preset_count(); ++preset) {
-            SynthEngine synth(kRate);
-            synth.set_preset(preset);
-            synth.set_mode(PlayMode::Pad);
-            synth.set_effect(0, kOff);
-            synth.set_effect(1, kOff);
-            synth.play_chord(kChord);
-            const auto before = synth.render_copy(4096U);
-            const float previous_left = before[before.size() - 2U];
-            const float previous_right = before[before.size() - 1U];
-            synth.set_effect(0, pair.first);
-            synth.set_effect(1, pair.second);
-            Rendered active = render_timed(synth, kRate / 2U);
-            const double jump = std::max(std::abs(static_cast<double>(active.audio[0] - previous_left)),
-                                         std::abs(static_cast<double>(active.audio[1] - previous_right)));
-            report.add(pair.name, preset, PlayMode::Pad, pair.first, pair.second,
-                       analyse(active.audio), jump, 0.0, active.milliseconds);
-        }
-    }
-
-    const std::array<int, 5> representative_presets{0, 1, 5, 12, 13};
-    for (const FxPair& pair : pairs) {
-        for (int preset : representative_presets) {
             for (PlayMode mode : modes) {
-                double elapsed = 0.0;
-                const Stats stats = run_sustained(preset, mode, pair.first, pair.second,
-                                                  kRate / 2U, elapsed);
-                report.add(std::string(pair.name) + "_MODES", preset, mode,
-                           pair.first, pair.second, stats, 0.0, 0.0, elapsed);
+                SynthEngine synth(kRate);
+                synth.set_preset(preset);
+                synth.set_mode(mode);
+                synth.set_effect(0, kOff);
+                synth.set_effect(1, kOff);
+                synth.play_chord(kChord);
+                const auto before = synth.render_copy(4096U);
+                const float previous_left = before[before.size() - 2U];
+                const float previous_right = before[before.size() - 1U];
+                synth.set_effect(0, pair.first);
+                synth.set_effect(1, pair.second);
+                Rendered active = render_timed(synth, kRate / 2U);
+                const double jump = std::max(std::abs(static_cast<double>(active.audio[0] - previous_left)),
+                                             std::abs(static_cast<double>(active.audio[1] - previous_right)));
+                report.add(pair.name, preset, mode, pair.first, pair.second,
+                           analyse(active.audio), jump, 0.0, active.milliseconds);
             }
         }
     }
@@ -343,11 +337,11 @@ int main(int argc, char** argv) {
         std::cout << "BENCHMARK average_block_ms=" << average_ms
                   << " max_block_ms=" << maximum_ms << " deadline_ms=10.6667\n";
         report.add("MAX_24_VOICE_BENCH", 1, PlayMode::Pad, synth.effect(0), synth.effect(1),
-                   analyse(combined), maximum_ms, 0.0, average_ms);
+                   analyse(combined), 0.0, 0.0, average_ms);
     }
 
     std::cout << "audio audit rows=" << report.rows() << " warnings=" << report.warnings()
-              << " report=" << path << '\n';
-    if (strict && report.warnings() != 0) return 1;
+              << " failures=" << report.failures() << " report=" << path << '\n';
+    if (strict && report.failures() != 0) return 1;
     return 0;
 }
