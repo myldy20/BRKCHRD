@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   apply-ui-themes:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/brkchrd-060-truth-safety'
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
