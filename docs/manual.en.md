@@ -1,4 +1,4 @@
-# BRKCHRD 0.5.2 Manual — English
+# BRKCHRD 0.6.0 Manual — English
 
 ## What BRKCHRD is
 
@@ -52,7 +52,11 @@ Press a direction to store that colour. It remains active while you play, enter 
 
 The chord is BASE while the D-pad is centred. Hold a direction to apply its colour only for the duration of the hold; release it to return immediately to BASE. Diagonals respond naturally when a second direction is pressed or released. A sounding chord is rebuilt as the gesture changes.
 
-Switching back to TOGGLE restores the previously stored toggle colour; HOLD does not erase it.
+Switching back to TOGGLE restores the previously stored toggle colour; HOLD does not erase it. The selected colour remains visible below the left grid, so chord-colour gestures no longer produce a popup over the playable labels.
+
+## Interface palettes
+
+Set `UI PALETTE` to AMETHYST, LOGO, OCEAN, EMBER or MONO. The complete interface changes immediately and the selection is saved. The two-second startup mark uses the same palette on the next launch. LOGO is based on the original BRKCHRD charcoal (`#111514`) and cream (`#f1e3c5`) artwork.
 
 ## Stable and live voicing
 
@@ -97,7 +101,7 @@ Set `PERF FX = OFF` to remove PERF FX from the L1 cycle without disabling FX1 or
 
 ## Settings
 
-Settings contains twenty rows:
+Settings contains twenty-one rows:
 
 - base and L2 colour palettes;
 - base, R1 and R2 chord banks;
@@ -105,6 +109,7 @@ Settings contains twenty rows:
 - key and octave;
 - Voice Lead and PERF FX;
 - UI Motion;
+- UI Palette;
 - rear-button swaps;
 - `LANGUAGE / ЯЗЫК`;
 - `CHORD DPAD`.

@@ -1,16 +1,16 @@
-# Установка BRKCHRD 0.5.2 на TrimUI Brick / Knulli
+# Установка BRKCHRD 0.6.0 на TrimUI Brick / Knulli
 
 ## Что нужно
 
 - TrimUI Brick или другая совместимая AArch64-консоль;
 - Knulli с поддержкой PortMaster;
-- архив `brkchrd-v0.5.2-portmaster.zip`;
+- архив `brkchrd-v0.6.0-portmaster.zip`;
 - около 5 МБ свободного места.
 
 ## Установка через SD-карту
 
 1. Корректно выключите консоль и подключите карту к компьютеру.
-2. Распакуйте **содержимое** `brkchrd-v0.5.2-portmaster.zip` в:
+2. Распакуйте **содержимое** `brkchrd-v0.6.0-portmaster.zip` в:
 
 ```text
 /userdata/roms/ports/
@@ -32,11 +32,11 @@
 Если архив лежит в `~/Downloads`, а адрес консоли — `10.53.219.134`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.5.2-portmaster.zip \
+scp ~/Downloads/brkchrd-v0.6.0-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 
 ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.5.2-portmaster.zip \
+  unzip -o /userdata/system/brkchrd-v0.6.0-portmaster.zip \
     -d /userdata/roms/ports/ &&
   chmod +x /userdata/roms/ports/BRKCHRD.sh &&
   chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
@@ -48,7 +48,7 @@ ssh root@10.53.219.134 '
 
 ## Обновление
 
-Распакуйте 0.5.2 поверх существующей установки. Формат конфига совместим. Если новых строк `language` и `chorddpad` ещё нет, будут использованы английский язык и режим НАЖАТИЕ.
+Распакуйте 0.6.0 поверх существующей установки. Формат конфига совместим. Если новых строк `language` и `chorddpad` ещё нет, будут использованы английский язык и режим НАЖАТИЕ.
 
 Перед сбросом или проверкой заводских значений сохраните копию:
 

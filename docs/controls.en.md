@@ -1,4 +1,4 @@
-# BRKCHRD 0.5.2 Controls — English
+# BRKCHRD 0.6.0 Controls — English
 
 ## TrimUI Brick mapping
 
@@ -55,7 +55,7 @@ The normal and L2-held palettes can each be CLASSIC, EXTENDED or DARK. Hold L2 w
 - a sounding chord is rebuilt on every gesture change;
 - L2 chooses the alternate palette for the duration of the hold.
 
-HOLD does not overwrite the colour stored by TOGGLE. Returning to TOGGLE restores the stored selection.
+HOLD does not overwrite the colour stored by TOGGLE. Returning to TOGGLE restores the stored selection. The active colour is already shown below the left grid, so D-pad chord gestures do not open a separate popup.
 
 ## SOUND mode
 
@@ -91,7 +91,9 @@ Hold a direction to substitute a temporary two-effect gesture. Release it to res
 - Select: close and save;
 - Start+Select: save and exit.
 
-Important options include `VOICE LEAD`, `PERF FX`, `UI MOTION`, button swaps, `LANGUAGE / ЯЗЫК` and `CHORD DPAD`.
+Important options include `VOICE LEAD`, `PERF FX`, `UI MOTION`, button swaps, `LANGUAGE / ЯЗЫК`, `CHORD DPAD` and `UI PALETTE`.
+
+`UI PALETTE` offers AMETHYST, LOGO, OCEAN, EMBER and MONO. The change is immediate, is saved with the other settings and recolours the startup logo on the next launch. LOGO uses the project's original `#111514` charcoal and `#f1e3c5` cream as its anchor colours.
 
 ## Desktop test mapping
 

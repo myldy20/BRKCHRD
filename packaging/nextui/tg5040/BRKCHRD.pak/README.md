@@ -1,4 +1,4 @@
-# BRKCHRD 0.5.2 — NextUI Pak
+# BRKCHRD 0.6.0 — NextUI Pak
 
 Native `tg5040` package for TrimUI Brick and compatible NextUI devices.
 

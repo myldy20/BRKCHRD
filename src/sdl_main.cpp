@@ -33,24 +33,83 @@ constexpr int kWidth = 512;
 constexpr int kHeight = 384;
 constexpr int kRate = 48000;
 constexpr int kFrames = 512;
-constexpr const char* kVersion = "0.5.2";
+constexpr const char* kVersion = "0.6.0";
 
 struct Colour { Uint8 r, g, b, a = 255; };
-constexpr Colour kBg{8, 7, 12};
-constexpr Colour kBgLift{15, 12, 22};
-constexpr Colour kInk{238, 226, 197};
-constexpr Colour kDim{143, 134, 153};
-constexpr Colour kPurple{117, 67, 171};
-constexpr Colour kPurpleBright{158, 99, 217};
-constexpr Colour kPanel{31, 27, 42};
-constexpr Colour kPanel2{45, 38, 57};
-constexpr Colour kPanel3{60, 50, 74};
-constexpr Colour kRed{216, 88, 88};
-constexpr Colour kOrange{224, 154, 63};
-constexpr Colour kTeal{80, 169, 154};
-constexpr Colour kBlue{91, 122, 187};
-constexpr Colour kGreen{112, 188, 120};
-constexpr Colour kWhite{248, 242, 226};
+
+struct UiTheme {
+    const char* english;
+    const char* russian;
+    Colour bg;
+    Colour bg_lift;
+    Colour ink;
+    Colour dim;
+    Colour primary;
+    Colour primary_bright;
+    Colour panel;
+    Colour panel2;
+    Colour panel3;
+    Colour red;
+    Colour orange;
+    Colour teal;
+    Colour blue;
+    Colour green;
+    Colour white;
+};
+
+constexpr std::array<UiTheme, 5> kUiThemes{{
+    {"AMETHYST", "АМЕТИСТ", {8,7,12}, {15,12,22}, {238,226,197}, {143,134,153},
+     {117,67,171}, {158,99,217}, {31,27,42}, {45,38,57}, {60,50,74},
+     {216,88,88}, {224,154,63}, {80,169,154}, {91,122,187}, {112,188,120}, {248,242,226}},
+    {"LOGO", "ЛОГО", {17,21,20}, {27,31,29}, {241,227,197}, {155,148,132},
+     {178,166,139}, {241,227,197}, {30,35,33}, {44,49,46}, {60,65,61},
+     {201,115,98}, {210,160,92}, {120,170,151}, {119,145,171}, {142,170,113}, {255,246,226}},
+    {"OCEAN", "ОКЕАН", {5,13,24}, {9,25,41}, {220,240,246}, {112,145,162},
+     {22,101,140}, {48,181,205}, {12,31,48}, {18,47,68}, {26,64,88},
+     {233,102,124}, {238,169,77}, {57,205,180}, {85,155,230}, {96,202,145}, {239,250,252}},
+    {"EMBER", "УГЛИ", {20,10,8}, {35,17,12}, {248,226,194}, {162,125,105},
+     {157,54,35}, {234,91,45}, {48,25,18}, {67,34,24}, {88,45,29},
+     {235,72,56}, {244,151,49}, {132,178,120}, {110,139,176}, {167,191,102}, {255,239,211}},
+    {"MONO", "МОНО", {7,8,10}, {17,18,21}, {231,233,236}, {128,132,138},
+     {105,108,115}, {205,208,214}, {28,30,34}, {43,45,50}, {60,62,68},
+     {183,185,190}, {159,162,168}, {137,140,146}, {117,120,126}, {196,198,202}, {250,250,250}}
+}};
+constexpr int kUiThemeCount = static_cast<int>(kUiThemes.size());
+
+Colour kBg = kUiThemes[0].bg;
+Colour kBgLift = kUiThemes[0].bg_lift;
+Colour kInk = kUiThemes[0].ink;
+Colour kDim = kUiThemes[0].dim;
+Colour kPurple = kUiThemes[0].primary;
+Colour kPurpleBright = kUiThemes[0].primary_bright;
+Colour kPanel = kUiThemes[0].panel;
+Colour kPanel2 = kUiThemes[0].panel2;
+Colour kPanel3 = kUiThemes[0].panel3;
+Colour kRed = kUiThemes[0].red;
+Colour kOrange = kUiThemes[0].orange;
+Colour kTeal = kUiThemes[0].teal;
+Colour kBlue = kUiThemes[0].blue;
+Colour kGreen = kUiThemes[0].green;
+Colour kWhite = kUiThemes[0].white;
+
+int normalise_theme(int index) {
+    index %= kUiThemeCount;
+    return index < 0 ? index + kUiThemeCount : index;
+}
+
+void apply_theme(int index) {
+    const UiTheme& theme = kUiThemes[static_cast<std::size_t>(normalise_theme(index))];
+    kBg = theme.bg; kBgLift = theme.bg_lift; kInk = theme.ink; kDim = theme.dim;
+    kPurple = theme.primary; kPurpleBright = theme.primary_bright;
+    kPanel = theme.panel; kPanel2 = theme.panel2; kPanel3 = theme.panel3;
+    kRed = theme.red; kOrange = theme.orange; kTeal = theme.teal;
+    kBlue = theme.blue; kGreen = theme.green; kWhite = theme.white;
+}
+
+std::string theme_name(Language language, int index) {
+    const UiTheme& theme = kUiThemes[static_cast<std::size_t>(normalise_theme(index))];
+    return language == Language::Russian ? theme.russian : theme.english;
+}
 
 void colour(SDL_Renderer* r, Colour c) { SDL_SetRenderDrawColor(r, c.r, c.g, c.b, c.a); }
 void rect(SDL_Renderer* r, int x, int y, int w, int h, Colour c) {
@@ -197,6 +256,7 @@ struct UiState {
     DpadMode dpad_mode = DpadMode::Chord;
     Language language = Language::English;
     ChordDpadStyle chord_dpad = ChordDpadStyle::Toggle;
+    int ui_theme = 0;
     bool settings = false;
     Direction selected_direction = Direction::Center;
     int selected_palette = 0;
@@ -289,6 +349,7 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
         else if (key == "perffxenabled") ui.perf_fx_enabled = value != 0.0F;
         else if (key == "language") ui.language = static_cast<Language>(std::clamp(static_cast<int>(value), 0, 1));
         else if (key == "chorddpad") ui.chord_dpad = static_cast<ChordDpadStyle>(std::clamp(static_cast<int>(value), 0, 1));
+        else if (key == "uitheme") ui.ui_theme = std::clamp(static_cast<int>(value), 0, kUiThemeCount - 1);
         else if (key == "uimotion") ui.ui_motion = std::clamp(static_cast<int>(value), 0, 2);
         else if (key == "swapleft") ui.swap_left_rear = value != 0.0F;
         else if (key == "swapright") ui.swap_right_rear = value != 0.0F;
@@ -308,6 +369,7 @@ void load_config(PerformanceState& p, UiState& ui, SynthEngine& synth) {
     synth.set_preset(p.preset); p.preset = synth.preset_index();
     for (int i = 0; i < static_cast<int>(SynthParameter::Count); ++i) if (param_seen[static_cast<std::size_t>(i)]) synth.set_parameter(static_cast<SynthParameter>(i), params[static_cast<std::size_t>(i)]);
     for (int slot = 0; slot < 2; ++slot) if (effect_seen[static_cast<std::size_t>(slot)]) synth.set_effect(slot, effects[static_cast<std::size_t>(slot)]);
+    apply_theme(ui.ui_theme);
 }
 
 void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine& synth) {
@@ -322,6 +384,7 @@ void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine
         << "perffxenabled " << (ui.perf_fx_enabled ? 1 : 0) << '\n'
         << "language " << static_cast<int>(ui.language) << '\n'
         << "chorddpad " << static_cast<int>(ui.chord_dpad) << '\n'
+        << "uitheme " << ui.ui_theme << '\n'
         << "uimotion " << ui.ui_motion << '\n'
         << "swapleft " << (ui.swap_left_rear ? 1 : 0) << '\n' << "swapright " << (ui.swap_right_rear ? 1 : 0) << '\n';
     for (int i = 0; i < static_cast<int>(SynthParameter::Count); ++i) out << "param" << i << ' ' << synth.parameter(static_cast<SynthParameter>(i)) << '\n';
@@ -586,18 +649,18 @@ void draw_chord_panel(SDL_Renderer* r, const PerformanceState& p, const UiState&
     text(r, x + w / 2, y + h - 28, fit(chord, 22), current ? 2 : 1, current ? kWhite : kDim, true, 0);
 }
 
-constexpr int kSettingsCount = 20;
+constexpr int kSettingsCount = 21;
 std::string settings_name(int row, const UiState& ui) {
     static const std::array<std::string, kSettingsCount> en{
         "BASE COLOUR", "L2 COLOUR", "BASE BANK", "R1 BANK", "R2 BANK",
         "FX1 TYPE", "FX1 AMOUNT", "FX1 COLOUR", "FX2 TYPE", "FX2 AMOUNT", "FX2 COLOUR",
         "KEY", "OCTAVE", "VOICE LEAD", "PERF FX", "UI MOTION", "SWAP L1/L2", "SWAP R1/R2",
-        "LANGUAGE / ЯЗЫК", "CHORD DPAD"};
+        "LANGUAGE / ЯЗЫК", "CHORD DPAD", "UI PALETTE"};
     static const std::array<std::string, kSettingsCount> ru{
         "ОСН. ОКРАСКА", "L2 ОКРАСКА", "ОСН. БАНК", "R1 БАНК", "R2 БАНК",
         "FX1 ТИП", "FX1 УРОВЕНЬ", "FX1 ОКРАСКА", "FX2 ТИП", "FX2 УРОВЕНЬ", "FX2 ОКРАСКА",
         "ТОНАЛЬНОСТЬ", "ОКТАВА", "ВЕДЕНИЕ", "ПЕРФ FX", "АНИМАЦИЯ", "СМЕНА L1/L2", "СМЕНА R1/R2",
-        "LANGUAGE / ЯЗЫК", "DPAD АККОРД"};
+        "LANGUAGE / ЯЗЫК", "DPAD АККОРД", "ПАЛИТРА UI"};
     return (brkchrd_ui::russian(ui.language) ? ru : en)[static_cast<std::size_t>(row)];
 }
 std::string settings_value(int row, const PerformanceState& p, const UiState& ui, const SynthEngine& synth) {
@@ -612,6 +675,7 @@ std::string settings_value(int row, const PerformanceState& p, const UiState& ui
     case 15: return brkchrd_ui::ui_motion(ui.language, ui.ui_motion); case 16: return brkchrd_ui::on_off(ui.language, ui.swap_left_rear); case 17: return brkchrd_ui::on_off(ui.language, ui.swap_right_rear);
     case 18: return ui.language == Language::Russian ? "RU" : "EN";
     case 19: return brkchrd_ui::chord_dpad(ui.language, ui.chord_dpad);
+    case 20: return theme_name(ui.language, ui.ui_theme);
     default: return "";
     }
 }
@@ -677,18 +741,37 @@ void draw_ui(SDL_Renderer* r, const PerformanceState& p, const UiState& ui, cons
 }
 
 
-bool show_splash(SDL_Renderer* r) {
+void draw_splash_logo(SDL_Renderer* r, Colour mark) {
+    constexpr int x = 202, y = 48, w = 108, h = 132;
+    outline(r, x, y, w, h, mark);
+    outline(r, x + 2, y + 2, w - 4, h - 4, alpha(mark, 90));
+    const std::array<int, 5> key_widths{12, 14, 15, 14, 11};
+    int key_x = x + 14;
+    for (int i = 0; i < 5; ++i) {
+        const int key_h = 42 + (i % 2) * 8;
+        rect(r, key_x, y + 16, key_widths[static_cast<std::size_t>(i)], key_h, mark);
+        key_x += key_widths[static_cast<std::size_t>(i)] + 5;
+    }
+    rect(r, x + 20, y + 91, 27, 8, mark);
+    rect(r, x + 29, y + 82, 8, 27, mark);
+    rect(r, x + 60, y + 84, 8, 8, mark); rect(r, x + 76, y + 84, 8, 8, mark);
+    rect(r, x + 60, y + 100, 8, 8, mark); rect(r, x + 76, y + 100, 8, 8, mark);
+}
+
+bool show_splash(SDL_Renderer* r, int theme_index) {
     if (std::getenv("BRKCHRD_SKIP_SPLASH") != nullptr) return true;
+    apply_theme(theme_index);
     const Uint32 until = SDL_GetTicks() + 2000U;
     while (SDL_GetTicks() < until) {
         SDL_Event event{};
         while (SDL_PollEvent(&event)) if (event.type == SDL_QUIT) return false;
         rect(r, 0, 0, kWidth, kHeight, kBg);
         for (int y = 0; y < kHeight; y += 24) line(r, 0, y, kWidth, y, alpha(kPurple, 18));
-        text(r, kWidth / 2, 116, "BRKCHRD", 4, kInk, true, 2);
-        line(r, 148, 164, 364, 164, kPurpleBright);
-        text(r, kWidth / 2, 194, "developed by myldy design", 1, kDim, true, 1);
-        text(r, kWidth / 2, 220, "@myldy20", 2, kPurpleBright, true, 1);
+        draw_splash_logo(r, kPurpleBright);
+        text(r, kWidth / 2, 206, "BRKCHRD", 4, kInk, true, 2);
+        line(r, 148, 254, 364, 254, kPurpleBright);
+        text(r, kWidth / 2, 280, "developed by myldy design", 1, kDim, true, 1);
+        text(r, kWidth / 2, 306, "@myldy20", 2, kPurpleBright, true, 1);
         SDL_RenderPresent(r);
         SDL_Delay(16);
     }
@@ -880,6 +963,7 @@ void edit_setting(UiState& ui, PerformanceState& p, SynthEngine& synth, int delt
     else if (row == 17) ui.swap_right_rear = !ui.swap_right_rear;
     else if (row == 18) ui.language = ui.language == Language::English ? Language::Russian : Language::English;
     else if (row == 19) ui.chord_dpad = ui.chord_dpad == ChordDpadStyle::Toggle ? ChordDpadStyle::Hold : ChordDpadStyle::Toggle;
+    else if (row == 20) { ui.ui_theme = normalise_theme(ui.ui_theme + delta); apply_theme(ui.ui_theme); }
 }
 
 void move_settings_row(UiState& ui, int delta) {
@@ -906,9 +990,6 @@ void handle_dpad_press(UiState& ui, PerformanceState& p, InputState& in, SynthEn
             const int palette = display_palette(in, ui);
             if (ui.selected_palette == palette && ui.selected_direction == d) ui.selected_direction = Direction::Center;
             else { ui.selected_palette = palette; ui.selected_direction = d; }
-            toast(ui, ui.selected_direction == Direction::Center
-                ? brkchrd_ui::tr(ui.language, "BASE", "ОСНОВА")
-                : brkchrd_ui::palette(ui.language, ui.selected_palette) + " / " + brkchrd_ui::direction(ui.language, ui.selected_palette, ui.selected_direction));
             if (in.active_face) update_chord(p, ui, in, current, previous, synth, false);
         }
     } else if (ui.dpad_mode == DpadMode::Sound) {
@@ -926,9 +1007,6 @@ void update_chord_hold(UiState& ui, PerformanceState& p, InputState& in, SynthEn
     if (ui.settings || ui.dpad_mode != DpadMode::Chord || ui.chord_dpad != ChordDpadStyle::Hold) return;
     const Direction direction = effective_direction(in, ui);
     const int palette = effective_palette(in, ui);
-    toast(ui, direction == Direction::Center
-        ? brkchrd_ui::tr(ui.language, "BASE", "ОСНОВА")
-        : brkchrd_ui::palette(ui.language, palette) + " / " + brkchrd_ui::direction(ui.language, palette, direction));
     if (in.active_face) update_chord(p, ui, in, current, previous, synth, false);
 }
 
@@ -1022,12 +1100,12 @@ int main(int, char**) {
     if (!renderer) { std::cerr << "renderer: " << SDL_GetError() << '\n'; SDL_DestroyWindow(window); SDL_Quit(); return 1; }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderSetLogicalSize(renderer, kWidth, kHeight);
-    if (!show_splash(renderer)) {
-        SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 0;
-    }
 
     SynthEngine synth(kRate); PerformanceState state; UiState ui;
     load_config(state, ui, synth); synth.set_mode(state.mode); synth.set_bpm(state.bpm); synth.set_latch(false);
+    if (!show_splash(renderer, ui.ui_theme)) {
+        SDL_DestroyRenderer(renderer); SDL_DestroyWindow(window); SDL_Quit(); return 0;
+    }
     AudioCallbackState audio_state; audio_state.synth = &synth;
     audio_state.frequency = SDL_GetPerformanceFrequency();
 
@@ -1052,7 +1130,7 @@ int main(int, char**) {
     InputState input; std::optional<ChordSpec> current; std::vector<int> previous;
     bool running = true; int raw_log_budget = 96;
     Uint32 next_audio_report = SDL_GetTicks() + 5000U;
-    toast(ui, brkchrd_ui::tr(ui.language, "BRKCHRD 0.5.2  LIVE CHORDS", "BRKCHRD 0.5.2  ЖИВЫЕ АККОРДЫ"), 1500U);
+    toast(ui, brkchrd_ui::tr(ui.language, "BRKCHRD 0.6.0  LIVE CHORDS", "BRKCHRD 0.6.0  ЖИВЫЕ АККОРДЫ"), 1500U);
 
     while (running) {
         SDL_Event event{};

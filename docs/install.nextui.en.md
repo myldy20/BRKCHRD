@@ -1,9 +1,9 @@
-# Installing BRKCHRD 0.5.2 on NextUI
+# Installing BRKCHRD 0.6.0 on NextUI
 
 BRKCHRD ships as a native Pak for the `tg5040` platform:
 
 ```text
-brkchrd-v0.5.2-nextui-tg5040.zip
+brkchrd-v0.6.0-nextui-tg5040.zip
 ```
 
 ## Package layout
@@ -42,7 +42,7 @@ This preserves the selected language, CHORD DPAD mode and all other settings whe
 
 ## Upgrade
 
-Extract the 0.5.2 archive over the existing `Tools/tg5040/` tree. Do not remove `.userdata` unless factory defaults are required.
+Extract the 0.6.0 archive over the existing `Tools/tg5040/` tree. Do not remove `.userdata` unless factory defaults are required.
 
 To reset only BRKCHRD, rename:
 

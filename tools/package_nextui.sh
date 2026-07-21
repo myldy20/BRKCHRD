@@ -33,7 +33,7 @@ cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$PAK/licenses/THIRD_PARTY_NOTICES.md"
 
 chmod +x "$PAK/launch.sh" "$PAK/brkchrd-sdl.aarch64"
 
-(cd "$STAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.5.2-nextui-tg5040.zip" Tools)
+(cd "$STAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.6.0-nextui-tg5040.zip" Tools)
 rm -rf "$STAGE"
 
-echo "Created $OUTPUT_DIR/brkchrd-v0.5.2-nextui-tg5040.zip"
+echo "Created $OUTPUT_DIR/brkchrd-v0.6.0-nextui-tg5040.zip"

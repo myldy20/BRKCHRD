@@ -1,4 +1,4 @@
-# BRKCHRD 0.5.2 — PortMaster / Knulli
+# BRKCHRD 0.6.0 — PortMaster / Knulli
 
 Extract the archive into the PortMaster ports directory. The package includes the native AArch64 executable, project artwork, GPLv3 and attribution notices, and complete English/Russian documentation under `brkchrd/docs/`.
 
@@ -15,7 +15,7 @@ Extract the archive into the PortMaster ports directory. The package includes th
 - Start hold: all notes off;
 - Start + Select: save and exit.
 
-New 0.5.2 settings:
+New 0.6.0 settings:
 
 - `LANGUAGE / ЯЗЫК = EN / RU` switches the interface immediately;
 - `CHORD DPAD = TOGGLE` stores a colour;
@@ -32,7 +32,7 @@ brkchrd/conf/brkchrd.log
 
 ---
 
-# BRKCHRD 0.5.2 — PortMaster / Knulli
+# BRKCHRD 0.6.0 — PortMaster / Knulli
 
 Распакуйте архив в каталог портов PortMaster. В пакет входят нативный AArch64-бинарник, оформление проекта, полный текст GPLv3, уведомление об исходном проекте и документация на русском и английском в `brkchrd/docs/`.
 
@@ -49,7 +49,7 @@ brkchrd/conf/brkchrd.log
 - Start долго: снять все ноты;
 - Start + Select: сохранить и выйти.
 
-Новые настройки 0.5.2:
+Новые настройки 0.6.0:
 
 - `LANGUAGE / ЯЗЫК = EN / RU` сразу переключает интерфейс;
 - `DPAD АККОРД = НАЖАТИЕ` сохраняет окраску;
