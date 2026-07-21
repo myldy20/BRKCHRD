@@ -169,6 +169,18 @@ int main() {
     const auto cleared_delay = synth.render_copy(2048);
     CHECK(absolute_peak(cleared_delay) < 0.00001F);
 
+    SynthEngine deep_echo(48000.0);
+    deep_echo.set_preset(1);
+    deep_echo.set_effect(0, {EffectType::Delay, 0.84F, 0.86F});
+    deep_echo.set_effect(1, {EffectType::Reverb, 0.40F, 0.72F});
+    deep_echo.play_chord({48, 55, 60, 64});
+    for (int block = 0; block < 240; ++block) {
+        const auto echo_audio = deep_echo.render_copy(512);
+        CHECK(std::all_of(echo_audio.begin(), echo_audio.end(), [](float sample) { return std::isfinite(sample); }));
+        CHECK(absolute_peak(echo_audio) <= 1.001F);
+        if (block == 24) deep_echo.release_chord();
+    }
+
     SynthEngine rapid(48000.0);
     rapid.set_preset(1);
     const std::array<std::vector<int>, 4> rapid_chords{{

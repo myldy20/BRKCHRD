@@ -434,21 +434,22 @@ struct SynthEngine::Impl {
             const std::size_t length = std::max<std::size_t>(1U, static_cast<std::size_t>(sample_rate * (0.08 + colour * 0.82)));
             const std::size_t read = (state.position + state.left.size() - std::min(length, state.left.size() - 1U)) % state.left.size();
             const float dl = state.read_left(read); const float dr = state.read_right(read);
-            const float feedback = 0.18F + amount * 0.62F;
-            state.left[state.position] = left + dr * feedback;
-            state.right[state.position] = right + dl * feedback;
-            out_l = left + dl * wet * 0.62F; out_r = right + dr * wet * 0.62F;
+            const float feedback = 0.14F + amount * 0.48F;
+            state.left[state.position] = std::clamp(left * 0.72F + dr * feedback, -1.25F, 1.25F);
+            state.right[state.position] = std::clamp(right * 0.72F + dl * feedback, -1.25F, 1.25F);
+            out_l = left * (1.0F - wet * 0.22F) + dl * wet * 0.48F;
+            out_r = right * (1.0F - wet * 0.22F) + dr * wet * 0.48F;
             break;
         }
         case EffectType::Reverb: {
             const std::size_t length = std::max<std::size_t>(1U, static_cast<std::size_t>(sample_rate * (0.16 + colour * 0.70)));
             const std::size_t read = (state.position + state.left.size() - std::min(length, state.left.size() - 1U)) % state.left.size();
             const float dl = state.read_left(read); const float dr = state.read_right((read + 953U) % state.right.size());
-            const float feedback = 0.54F + colour * 0.34F;
-            state.left[state.position] = left + dr * feedback;
-            state.right[state.position] = right + dl * feedback;
-            out_l = left * (1.0F - wet * 0.30F) + (dl + dr * 0.35F) * wet * 0.50F;
-            out_r = right * (1.0F - wet * 0.30F) + (dr + dl * 0.35F) * wet * 0.50F;
+            const float feedback = 0.42F + colour * 0.24F;
+            state.left[state.position] = std::clamp(left * 0.68F + dr * feedback, -1.20F, 1.20F);
+            state.right[state.position] = std::clamp(right * 0.68F + dl * feedback, -1.20F, 1.20F);
+            out_l = left * (1.0F - wet * 0.24F) + (dl + dr * 0.28F) * wet * 0.42F;
+            out_r = right * (1.0F - wet * 0.24F) + (dr + dl * 0.28F) * wet * 0.42F;
             break;
         }
         case EffectType::Count: break;

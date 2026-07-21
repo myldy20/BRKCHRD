@@ -140,6 +140,32 @@ void text_box(SDL_Renderer* r, int x, int y, int w, int h, const std::string& va
     const std::string shown = fit_width(value, w - 8, scale, tracking);
     text(r, x + w / 2, y + (h - 7 * scale) / 2, shown, scale, c, true, tracking);
 }
+void text_box_left(SDL_Renderer* r, int x, int y, int w, int h, const std::string& value,
+                   int maximum_scale, Colour c, int tracking = 1) {
+    int scale = std::max(1, maximum_scale);
+    while (scale > 1 && text_width(value, scale, tracking) > w - 8) --scale;
+    const std::string shown = fit_width(value, w - 8, scale, tracking);
+    text(r, x + 4, y + (h - 7 * scale) / 2, shown, scale, c, false, tracking);
+}
+void text_box_wrapped(SDL_Renderer* r, int x, int y, int w, int h, const std::string& value,
+                      Colour c) {
+    constexpr int scale = 2;
+    constexpr int tracking = 1;
+    const std::string shown = fit(value, 10);
+    const int characters = brkchrd_ui::codepoint_count(shown);
+    if (characters <= 5) {
+        text(r, x + w / 2, y + (h - 7 * scale) / 2, shown, scale, c, true, tracking);
+        return;
+    }
+    const int split = (characters + 1) / 2;
+    const std::size_t offset = brkchrd_ui::byte_offset(shown, split);
+    const std::string top = fit_width(shown.substr(0, offset), w - 6, scale, tracking);
+    const std::string bottom = fit_width(shown.substr(offset), w - 6, scale, tracking);
+    const int total_height = 14 * 2 + 3;
+    const int first_y = y + (h - total_height) / 2;
+    text(r, x + w / 2, first_y, top, scale, c, true, tracking);
+    text(r, x + w / 2, first_y + 17, bottom, scale, c, true, tracking);
+}
 void micro(SDL_Renderer* r, int x, int y, std::string_view value, Colour c, bool centered = false) {
     text(r, x, y, value, 1, c, centered, 1);
 }
@@ -361,7 +387,7 @@ void draw_cell(SDL_Renderer* r, int x, int y, int w, int h, const std::string& l
     Colour fill = active ? accent : live ? kPanel3 : kPanel2;
     rect(r, x, y, w, h, fill);
     outline(r, x, y, w, h, live ? kWhite : alpha(accent, 130));
-    text_box(r, x + 3, y + 3, w - 6, h - 6, label, 2, active ? kBg : kInk, 1);
+    text_box_wrapped(r, x + 3, y + 3, w - 6, h - 6, label, active ? kBg : kInk);
 }
 
 std::array<std::pair<Direction, std::pair<int, int>>, 8> grid_positions(int x, int y, int cw, int ch, int gap) {
@@ -511,7 +537,8 @@ void chord_button(SDL_Renderer* r, int x, int y, int w, int h, const std::string
     if (active && pulse > 0.5F) fill = kWhite;
     rect(r, x, y, w, h, fill); outline(r, x, y, w, h, active ? kWhite : alpha(accent, 140));
     text(r, x + 8, y + 6, key, 2, active && pulse <= 0.5F ? kBg : accent);
-    text_box(r, x + 4, y + 27, w - 8, h - 31, label, 2, active && pulse <= 0.5F ? kBg : kInk, 1);
+    text_box_wrapped(r, x + 4, y + 23, w - 8, h - 25, label,
+                     active && pulse <= 0.5F ? kBg : kInk);
 }
 
 void draw_chord_panel(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
@@ -582,7 +609,8 @@ void draw_settings(SDL_Renderer* r, const PerformanceState& p, const UiState& ui
         const int row_y = 78 + i * 38;
         rect(r, 28, row_y, 456, 31, active ? kBlue : kPanel2);
         outline(r, 28, row_y, 456, 31, active ? kWhite : alpha(kBlue, 100));
-        text_box(r, 34, row_y + 2, 274, 27, settings_name(row, ui), 2, active ? kBg : kInk, 1);
+        text_box_left(r, 34, row_y + 2, 274, 27, settings_name(row, ui), 2,
+                      active ? kBg : kInk, 1);
         text_box(r, 316, row_y + 2, 162, 27, settings_value(row, p, ui, synth), 2, active ? kBg : kDim, 1);
     }
     micro(r, 28, 352, brkchrd_ui::tr(ui.language, "START+SELECT: SAVE AND EXIT", "START+SELECT: СОХР. И ВЫХОД"), kDim);
@@ -721,7 +749,7 @@ std::pair<EffectSettings, EffectSettings> performance_fx(int layer, Direction d)
         case Direction::Right: return {fx(EffectType::Crusher, 0.95F, 0.15F), fx(EffectType::Drive, 0.72F, 0.35F)};
         case Direction::DownRight: return {fx(EffectType::Drive, 0.98F, 0.24F), fx(EffectType::Phaser, 0.58F, 0.78F)};
         case Direction::Down: return {fx(EffectType::Reverb, 1.00F, 0.92F), fx(EffectType::Chorus, 0.72F, 0.82F)};
-        case Direction::DownLeft: return {fx(EffectType::Delay, 1.00F, 0.94F), fx(EffectType::Reverb, 0.74F, 0.88F)};
+        case Direction::DownLeft: return {fx(EffectType::Delay, 0.84F, 0.86F), fx(EffectType::Reverb, 0.40F, 0.72F)};
         case Direction::Left: return {fx(EffectType::Phaser, 1.00F, 0.88F), fx(EffectType::Chorus, 0.82F, 0.76F)};
         case Direction::Center: break;
         }
