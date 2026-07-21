@@ -1,0 +1,68 @@
+name: publish-v060
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-v060.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-brkchrd-v060
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build AArch64 release packages
+        run: |
+          rm -rf build-aarch64 dist
+          docker run --rm \
+            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
+            bash -ec '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
+              cmake --build build-aarch64 --parallel 2
+              ctest --test-dir build-aarch64 --output-on-failure
+              strip build-aarch64/brkchrd-sdl
+              sh ./tools/package_portmaster.sh build-aarch64 dist
+              sh ./tools/package_nextui.sh build-aarch64 dist
+            '
+          test -f dist/brkchrd-v0.6.0-portmaster.zip
+          test -f dist/brkchrd-v0.6.0-nextui-tg5040.zip
+          unzip -t dist/brkchrd-v0.6.0-portmaster.zip
+          unzip -t dist/brkchrd-v0.6.0-nextui-tg5040.zip
+
+      - name: Create or refresh GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.6.0 >/dev/null 2>&1; then
+            gh release upload v0.6.0 \
+              dist/brkchrd-v0.6.0-portmaster.zip \
+              dist/brkchrd-v0.6.0-nextui-tg5040.zip \
+              --clobber
+            gh release edit v0.6.0 \
+              --title "BRKCHRD 0.6.0" \
+              --notes-file docs/release-v0.6.0.md \
+              --latest
+          else
+            gh release create v0.6.0 \
+              dist/brkchrd-v0.6.0-portmaster.zip \
+              dist/brkchrd-v0.6.0-nextui-tg5040.zip \
+              --target "$GITHUB_SHA" \
+              --title "BRKCHRD 0.6.0" \
+              --notes-file docs/release-v0.6.0.md \
+              --latest
+          fi
