@@ -1,0 +1,31 @@
+name: apply-hardware-feedback
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-060-truth-safety
+    paths:
+      - tools/apply-hardware-feedback.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - name: Apply hardware feedback fixes
+        run: python3 tools/apply_hardware_feedback.py
+      - name: Commit updated runtime and UI
+        run: |
+          set -euo pipefail
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add include/brkchrd/synth.hpp src/synth.cpp src/sdl_main.cpp tests/test_main.cpp
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix held-chord retriggers, rapid-play crackle and UI readability'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
