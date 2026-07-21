@@ -58,7 +58,7 @@ jobs:
           test -f assets/branding/brkchrd-logo.svg
           test -f assets/branding/brkchrd-banner.jpg
           test -f packaging/portmaster/brkchrd/screenshot.jpg
-          test -x packaging/portmaster/brkchrd/install_metadata.sh
+          test -f packaging/portmaster/brkchrd/install_metadata.sh
           test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
