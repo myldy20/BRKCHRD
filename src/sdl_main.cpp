@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
@@ -335,9 +336,28 @@ void save_config(const PerformanceState& p, const UiState& ui, const SynthEngine
     if (!atomic_write_text(config_path(), out.str(), &error)) std::cerr << "config: " << error << '\n';
 }
 
+struct AudioCallbackState {
+    SynthEngine* synth = nullptr;
+    Uint64 frequency = 1U;
+    int sample_rate = kRate;
+    std::atomic<Uint64> callbacks{0U};
+    std::atomic<Uint64> overruns{0U};
+    std::atomic<Uint64> maximum_ticks{0U};
+};
+
 void audio_callback(void* userdata, Uint8* bytes, int count) {
-    auto* synth = static_cast<SynthEngine*>(userdata);
-    synth->render(reinterpret_cast<float*>(bytes), static_cast<std::size_t>(count) / (sizeof(float) * 2U));
+    auto* state = static_cast<AudioCallbackState*>(userdata);
+    const Uint64 begin = SDL_GetPerformanceCounter();
+    const std::size_t frames = static_cast<std::size_t>(count) / (sizeof(float) * 2U);
+    state->synth->render(reinterpret_cast<float*>(bytes), frames);
+    const Uint64 elapsed = SDL_GetPerformanceCounter() - begin;
+    const Uint64 deadline = static_cast<Uint64>(frames) * state->frequency /
+        static_cast<Uint64>(std::max(1, state->sample_rate));
+    state->callbacks.fetch_add(1U, std::memory_order_relaxed);
+    if (elapsed > deadline) state->overruns.fetch_add(1U, std::memory_order_relaxed);
+    Uint64 previous = state->maximum_ticks.load(std::memory_order_relaxed);
+    while (elapsed > previous && !state->maximum_ticks.compare_exchange_weak(
+        previous, elapsed, std::memory_order_relaxed, std::memory_order_relaxed)) {}
 }
 
 void draw_background(SDL_Renderer* r, const UiState& ui, float peak) {
@@ -1008,9 +1028,11 @@ int main(int, char**) {
 
     SynthEngine synth(kRate); PerformanceState state; UiState ui;
     load_config(state, ui, synth); synth.set_mode(state.mode); synth.set_bpm(state.bpm); synth.set_latch(false);
+    AudioCallbackState audio_state; audio_state.synth = &synth;
+    audio_state.frequency = SDL_GetPerformanceFrequency();
 
     SDL_AudioSpec desired{}; desired.freq = kRate; desired.format = AUDIO_F32SYS; desired.channels = 2;
-    desired.samples = kFrames; desired.callback = audio_callback; desired.userdata = &synth;
+    desired.samples = kFrames; desired.callback = audio_callback; desired.userdata = &audio_state;
     SDL_AudioSpec obtained{}; const SDL_AudioDeviceID audio = SDL_OpenAudioDevice(nullptr, 0, &desired, &obtained, 0);
     if (audio == 0) {
         std::cerr << "audio: " << SDL_GetError() << '\n';
@@ -1020,6 +1042,7 @@ int main(int, char**) {
     std::cerr << "audio backend=" << (SDL_GetCurrentAudioDriver() ? SDL_GetCurrentAudioDriver() : "unknown")
               << " rate=" << obtained.freq << " frames=" << obtained.samples
               << " channels=" << static_cast<int>(obtained.channels) << '\n';
+    audio_state.sample_rate = obtained.freq;
     SDL_PauseAudioDevice(audio, 0);
 
     SDL_GameController* controller = nullptr;
@@ -1028,6 +1051,7 @@ int main(int, char**) {
 
     InputState input; std::optional<ChordSpec> current; std::vector<int> previous;
     bool running = true; int raw_log_budget = 96;
+    Uint32 next_audio_report = SDL_GetTicks() + 5000U;
     toast(ui, brkchrd_ui::tr(ui.language, "BRKCHRD 0.5.2  LIVE CHORDS", "BRKCHRD 0.5.2  ЖИВЫЕ АККОРДЫ"), 1500U);
 
     while (running) {
@@ -1150,6 +1174,18 @@ int main(int, char**) {
         }
         repeat_edit(ui, state, input, synth, current, previous);
         if (SDL_GetTicks() >= ui.toast_until) ui.toast.clear();
+        if (SDL_GetTicks() >= next_audio_report) {
+            const Uint64 callbacks = audio_state.callbacks.exchange(0U, std::memory_order_relaxed);
+            const Uint64 overruns = audio_state.overruns.exchange(0U, std::memory_order_relaxed);
+            const Uint64 maximum = audio_state.maximum_ticks.exchange(0U, std::memory_order_relaxed);
+            const double maximum_ms = 1000.0 * static_cast<double>(maximum) /
+                static_cast<double>(std::max<Uint64>(1U, audio_state.frequency));
+            const double deadline_ms = 1000.0 * static_cast<double>(obtained.samples) /
+                static_cast<double>(std::max(1, obtained.freq));
+            std::cerr << "audio timing callbacks=" << callbacks << " overruns=" << overruns
+                      << " max_ms=" << maximum_ms << " deadline_ms=" << deadline_ms << '\n';
+            next_audio_report = SDL_GetTicks() + 5000U;
+        }
         draw_ui(renderer, state, ui, input, current, synth);
         SDL_RenderPresent(renderer); SDL_Delay(8);
     }
