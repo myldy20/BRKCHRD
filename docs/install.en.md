@@ -1,10 +1,20 @@
 # Installing BRKCHRD 0.6.0 on TrimUI Brick / Knulli
 
+## Download the package
+
+Download the ready-to-install build here:
+
+**[`brkchrd-v0.6.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-portmaster.zip)**
+
+Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v0.6.0-portmaster.zip`.
+
+> Do not use the green **Code → Download ZIP** button. That archive contains source code, not the ready-to-install application.
+
 ## Requirements
 
 - TrimUI Brick or another compatible AArch64 handheld;
 - Knulli with PortMaster support;
-- `brkchrd-v0.6.0-portmaster.zip`;
+- `brkchrd-v0.6.0-portmaster.zip` from the link above;
 - approximately 5 MB of free space.
 
 ## Install from the SD card
@@ -48,7 +58,7 @@ Refresh Ports or reboot after installation.
 
 ## Upgrade
 
-Extract 0.6.0 over an existing installation. The configuration format is compatible; the new `language` and `chorddpad` values use English and TOGGLE defaults when absent.
+Extract 0.6.0 over an existing installation. The configuration format is compatible and missing settings use safe defaults.
 
 Back up the configuration before resetting or testing factory defaults:
 
@@ -69,7 +79,7 @@ To reset BRKCHRD, rename `brkchrd.cfg`; the application will create a new file o
 /userdata/roms/ports/brkchrd/conf/brkchrd.log
 ```
 
-The language, CHORD DPAD mode and all other settings are stored in this configuration.
+The language, CHORD DPAD mode, selected UI palette and all other settings are stored in this configuration.
 
 ## Uninstall
 
