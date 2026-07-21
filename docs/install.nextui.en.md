@@ -1,5 +1,15 @@
 # Installing BRKCHRD 0.6.0 on NextUI
 
+## Download the package
+
+Download the ready-to-install Pak here:
+
+**[`brkchrd-v0.6.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-nextui-tg5040.zip)**
+
+Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v0.6.0-nextui-tg5040.zip`.
+
+> Do not use the green **Code → Download ZIP** button. That archive contains source code, not the ready-to-install Pak.
+
 BRKCHRD ships as a native Pak for the `tg5040` platform:
 
 ```text
@@ -38,7 +48,7 @@ SD/.userdata/tg5040/brkchrd/brkchrd.cfg
 SD/.userdata/tg5040/logs/BRKCHRD.txt
 ```
 
-This preserves the selected language, CHORD DPAD mode and all other settings when the Pak is replaced.
+This preserves the selected language, CHORD DPAD mode, UI palette and all other settings when the Pak is replaced.
 
 ## Upgrade
 
