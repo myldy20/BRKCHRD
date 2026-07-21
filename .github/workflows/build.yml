@@ -6,44 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-audio-path-hardening:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/brkchrd-060-truth-safety
-          fetch-depth: 0
-      - name: Apply signal-path corrections and runtime telemetry
-        run: |
-          test -f tools/apply-audio-path-hardening.py || exit 0
-          set +e
-          python3 tools/apply-audio-path-hardening.py > apply-hardening.log 2>&1
-          status=$?
-          set -e
-          cat apply-hardening.log
-          test "$status" -eq 0
-          rm -f tools/apply-audio-path-hardening.py apply-hardening.log
-          git config user.name 'myldy20'
-          git config user.email 'myldy20@users.noreply.github.com'
-          git add -A
-          git diff --cached --quiet && exit 0
-          git commit -m 'Harden oscillators, output limiting and audio callback diagnostics'
-          git push origin HEAD:agent/brkchrd-060-truth-safety
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: audio-hardening-migration-log
-          path: apply-hardening.log
-          if-no-files-found: ignore
-
   linux:
     runs-on: ubuntu-latest
     timeout-minutes: 35
