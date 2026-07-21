@@ -26,6 +26,9 @@ target_link_libraries(brkchrd_core PRIVATE brkchrd_warnings brkchrd_sanitizers)
 add_executable(brkchrd-render tools/render_demo.cpp)
 target_link_libraries(brkchrd-render PRIVATE brkchrd_core brkchrd_warnings brkchrd_sanitizers)
 
+add_executable(brkchrd-audio-audit tools/audio_audit.cpp)
+target_link_libraries(brkchrd-audio-audit PRIVATE brkchrd_core brkchrd_warnings brkchrd_sanitizers)
+
 if(BRKCHRD_BUILD_TESTS)
   enable_testing()
   add_executable(brkchrd-tests tests/test_main.cpp)
