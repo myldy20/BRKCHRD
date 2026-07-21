@@ -1,12 +1,12 @@
-# BRKCHRD 0.5.2 Contributor Hardware QA Checklist
+# BRKCHRD 0.6.0 Contributor Hardware QA Checklist
 
 This document is for a contributor, developer or release tester validating a physical TrimUI Brick. Ordinary users do not need to complete it. Automated CI already covers compilation, unit tests, headless SDL startup, audio rendering and package structure.
 
 ## Installation and basic operation
 
-- install the 0.5.2 PortMaster or NextUI package;
+- install the 0.6.0 PortMaster or NextUI package;
 - confirm the application opens and ABXY produces sound;
-- confirm the header reports 0.5.2;
+- confirm the header reports 0.6.0;
 - confirm exit returns cleanly to the frontend and silences audio.
 
 ## English and Russian interface
@@ -18,12 +18,14 @@ Set `LANGUAGE / ЯЗЫК` to EN and RU in turn.
 - no translated label crosses its panel boundary;
 - header, CHORD, SOUND, PERF FX, Settings, footer and toast messages follow the selected language;
 - the language persists after restart;
+- all five UI palettes apply immediately and persist; LOGO uses the charcoal/cream project colours;
+- the next startup logo uses the saved UI palette;
 - preset names and chord symbols remain readable.
 
 ## Settings layout
 
-- scrolling reaches all 20 rows;
-- `LANGUAGE / ЯЗЫК` and `CHORD DPAD` are reachable;
+- scrolling reaches all 21 rows;
+- `LANGUAGE / ЯЗЫК`, `CHORD DPAD` and `UI PALETTE` are reachable;
 - values remain inside the right boundary in both languages;
 - the selected row remains legible;
 - Select closes and saves;
@@ -31,7 +33,7 @@ Set `LANGUAGE / ЯЗЫК` to EN and RU in turn.
 
 ## CHORD DPAD = TOGGLE
 
-- pressing a direction stores its colour;
+- pressing a direction stores its colour without opening a popup over the chord labels;
 - pressing the same direction again returns to BASE;
 - the stored colour remains active in SOUND and PERF FX;
 - selecting from the L2 palette remains active after L2 is released;
@@ -40,7 +42,7 @@ Set `LANGUAGE / ЯЗЫК` to EN and RU in turn.
 ## CHORD DPAD = HOLD
 
 - centred D-pad produces BASE;
-- holding a direction applies its colour immediately;
+- holding a direction applies its colour immediately without opening a popup over the chord labels;
 - releasing it returns a sounding chord immediately to BASE;
 - adding and releasing a second axis moves cleanly into and out of diagonals;
 - L2 selects the alternate palette while held;

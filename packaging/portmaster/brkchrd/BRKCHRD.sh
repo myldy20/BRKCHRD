@@ -22,6 +22,9 @@ CONFDIR="$GAMEDIR/conf"
 BIN="$GAMEDIR/brkchrd-sdl.${DEVICE_ARCH}"
 
 mkdir -p "$CONFDIR"
+if [ -x "$GAMEDIR/install_metadata.sh" ]; then
+  "$GAMEDIR/install_metadata.sh" "/$directory/ports" >/dev/null 2>&1 || true
+fi
 cd "$GAMEDIR" || exit 1
 
 export XDG_CONFIG_HOME="$CONFDIR"

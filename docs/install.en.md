@@ -1,16 +1,16 @@
-# Installing BRKCHRD 0.5.2 on TrimUI Brick / Knulli
+# Installing BRKCHRD 0.6.0 on TrimUI Brick / Knulli
 
 ## Requirements
 
 - TrimUI Brick or another compatible AArch64 handheld;
 - Knulli with PortMaster support;
-- `brkchrd-v0.5.2-portmaster.zip`;
+- `brkchrd-v0.6.0-portmaster.zip`;
 - approximately 5 MB of free space.
 
 ## Install from the SD card
 
 1. Shut down the handheld cleanly and mount its SD card.
-2. Extract the **contents** of `brkchrd-v0.5.2-portmaster.zip` into:
+2. Extract the **contents** of `brkchrd-v0.6.0-portmaster.zip` into:
 
 ```text
 /userdata/roms/ports/
@@ -32,11 +32,11 @@ Return the card, boot Knulli and refresh the game list if BRKCHRD is not visible
 Assuming the archive is in `~/Downloads` and the handheld IP is `10.53.219.134`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.5.2-portmaster.zip \
+scp ~/Downloads/brkchrd-v0.6.0-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 
 ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.5.2-portmaster.zip \
+  unzip -o /userdata/system/brkchrd-v0.6.0-portmaster.zip \
     -d /userdata/roms/ports/ &&
   chmod +x /userdata/roms/ports/BRKCHRD.sh &&
   chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
@@ -48,7 +48,7 @@ Refresh Ports or reboot after installation.
 
 ## Upgrade
 
-Extract 0.5.2 over an existing installation. The configuration format is compatible; the new `language` and `chorddpad` values use English and TOGGLE defaults when absent.
+Extract 0.6.0 over an existing installation. The configuration format is compatible; the new `language` and `chorddpad` values use English and TOGGLE defaults when absent.
 
 Back up the configuration before resetting or testing factory defaults:
 

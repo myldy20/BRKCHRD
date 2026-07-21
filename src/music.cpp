@@ -166,8 +166,11 @@ std::vector<int> prepare_intervals(const ChordSpec& chord, VoicingProfile profil
 
     if (profile == VoicingProfile::Bass) {
         std::vector<int> bass{0};
-        const auto fifth = std::find_if(intervals.begin(), intervals.end(), [](int i) { return wrap_pc(i) == 7; });
-        if (fifth != intervals.end()) bass.push_back(7);
+        const auto fifth = std::find_if(intervals.begin(), intervals.end(), [](int i) {
+            const int pitch_class = wrap_pc(i);
+            return pitch_class == 7 || pitch_class == 6;
+        });
+        if (fifth != intervals.end()) bass.push_back(wrap_pc(*fifth));
         bass.push_back(12);
         return bass;
     }

@@ -47,6 +47,7 @@ public:
     void set_bpm(int bpm);
     void set_latch(bool latch);
     void play_chord(const std::vector<int>& notes);
+    void change_chord(const std::vector<int>& notes);
     void release_chord();
     void all_notes_off();
 
