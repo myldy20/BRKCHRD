@@ -23,14 +23,20 @@ jobs:
           fetch-depth: 0
       - name: Apply palettes, documentation and version update
         run: |
-          test -f tools/apply-ui-themes-fixed.py || exit 0
-          python3 tools/apply-ui-themes-fixed.py > ui-theme-migration.log 2>&1
+          set +e
+          (
+            test -f tools/apply-ui-themes-fixed.py
+            python3 tools/apply-ui-themes-fixed.py
+            git config user.name 'myldy20'
+            git config user.email 'myldy20@users.noreply.github.com'
+            git add -A
+            git commit -m 'Add selectable UI palettes and unobtrusive chord colour gestures'
+            git push --force-with-lease origin HEAD:agent/brkchrd-060-truth-safety
+          ) > ui-theme-migration.log 2>&1
+          status=$?
+          set -e
           cat ui-theme-migration.log
-          git config user.name 'myldy20'
-          git config user.email 'myldy20@users.noreply.github.com'
-          git add -A
-          git commit -m 'Add selectable UI palettes and unobtrusive chord colour gestures'
-          git push --force-with-lease origin HEAD:agent/brkchrd-060-truth-safety
+          exit "$status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
