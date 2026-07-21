@@ -1,0 +1,42 @@
+name: apply-ui-themes-fixed
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-060-truth-safety
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-ui-themes-fixed-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - name: Apply palettes and clean migration scaffolding
+        run: |
+          python3 tools/apply-ui-themes-fixed.py
+          rm -f tools/apply-ui-themes.py tools/apply-ui-themes-fixed.py .github/workflows/apply-ui-themes-fixed.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/build.yml')
+          text = path.read_text()
+          start = text.index('  apply-ui-themes:\n')
+          end = text.index('  linux:\n', start)
+          text = text[:start] + text[end:]
+          text = text.replace('permissions:\n  contents: write', 'permissions:\n  contents: read', 1)
+          path.write_text(text)
+          PY
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add selectable UI palettes and unobtrusive chord colour gestures'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
