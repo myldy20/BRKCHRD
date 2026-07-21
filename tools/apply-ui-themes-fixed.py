@@ -6,7 +6,7 @@ marker = 'workflow_path = ROOT / ".github" / "workflows" / "build.yml"\n'
 if marker not in source:
     raise RuntimeError("workflow migration marker missing")
 
-source = source[:source.index(marker)] + r'''workflow_path = ROOT / ".github" / "workflows" / "build.yml"
+source = source[:source.index(marker)] + r"""workflow_path = ROOT / ".github" / "workflows" / "build.yml"
 workflow = workflow_path.read_text()
 
 escaped_config = "printf 'language 1\\nchorddpad 1\\n' > /tmp/brkchrd-ru/brkchrd.cfg"
@@ -39,7 +39,7 @@ workflow = replace_once(workflow,
     "          grep -q 'CHORD DPAD' docs/controls.en.md\n          grep -q 'DPAD АККОРД' docs/controls.ru.md\n          grep -q 'UI PALETTE' docs/controls.en.md\n          grep -q 'ПАЛИТРА UI' docs/controls.ru.md\n          grep -q 'kUiThemes' src/sdl_main.cpp\n          grep -q 'uitheme' src/sdl_main.cpp\n",
     "theme CI checks")
 workflow_path.write_text(workflow)
-'''
+"""
 
 namespace = {"__file__": str(script_path), "__name__": "__main__"}
 exec(compile(source, str(script_path), "exec"), namespace)
