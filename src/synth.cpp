@@ -77,6 +77,7 @@ float soft_clip(float value, float drive) { const float d = std::max(1.0F, drive
 struct Voice {
     bool active = false;
     bool gate = false;
+    bool fast_release = false;
     int note = 60;
     double p1 = 0.0;
     double p2 = 0.0;
@@ -174,12 +175,35 @@ struct SynthEngine::Impl {
         return static_cast<std::int64_t>(sample_rate * 60.0 / static_cast<double>(std::max(40, bpm)) * beats);
     }
 
-    void release_all() { for (auto& voice : voices) voice.gate = false; }
-    void stop_note(int note) { for (auto& voice : voices) if (voice.active && voice.note == note) voice.gate = false; }
+    void release_all(bool fast = false) {
+        for (auto& voice : voices) {
+            if (!voice.active) continue;
+            voice.gate = false;
+            if (fast) voice.fast_release = true;
+        }
+    }
+
+    void stop_note(int note, bool fast = false) {
+        for (auto& voice : voices) {
+            if (!voice.active || voice.note != note) continue;
+            voice.gate = false;
+            if (fast) voice.fast_release = true;
+        }
+    }
 
     void start_note(int note) {
         Voice* selected = nullptr;
-        for (auto& voice : voices) if (!voice.active) { selected = &voice; break; }
+        bool reused_release = false;
+        for (auto& voice : voices) {
+            if (voice.active && !voice.gate && voice.note == note) {
+                selected = &voice;
+                reused_release = true;
+                break;
+            }
+        }
+        if (selected == nullptr) {
+            for (auto& voice : voices) if (!voice.active) { selected = &voice; break; }
+        }
         if (selected == nullptr) {
             selected = &*std::min_element(voices.begin(), voices.end(), [](const Voice& a, const Voice& b) {
                 if (a.env != b.env) return a.env < b.env;
@@ -188,21 +212,24 @@ struct SynthEngine::Impl {
         }
         selected->active = true;
         selected->gate = true;
+        selected->fast_release = false;
         selected->note = note;
-        selected->p1 = 0.0;
-        selected->p2 = 0.17;
-        selected->p3 = 0.41;
-        selected->env = std::min(selected->env, 0.05F);
+        if (!reused_release) {
+            selected->p1 = 0.0;
+            selected->p2 = 0.17;
+            selected->p3 = 0.41;
+            selected->env = std::min(selected->env, 0.05F);
+            selected->low = 0.0F;
+            selected->band = 0.0F;
+        }
         selected->life = 0.0F;
-        selected->low = 0.0F;
-        selected->band = 0.0F;
         selected->pan = std::clamp(static_cast<float>((note % 12) - 6) / 9.0F, -0.68F, 0.68F);
         selected->noise = static_cast<std::uint32_t>(note * 747796405U + static_cast<unsigned>(voice_age));
         selected->age = ++voice_age;
     }
 
     void schedule_chord(const std::vector<int>& notes, bool strum) {
-        release_all();
+        release_all(true);
         scheduled.clear();
         const float motion = controls[static_cast<std::size_t>(SynthParameter::Motion)];
         const std::int64_t spacing = strum ? static_cast<std::int64_t>(sample_rate * (0.010 + 0.055 * motion)) : 0;
@@ -215,7 +242,43 @@ struct SynthEngine::Impl {
         rhythm_countdown = 0;
         if (mode == PlayMode::Pad) schedule_chord(notes, false);
         else if (mode == PlayMode::Strum) schedule_chord(notes, true);
-        else release_all();
+        else release_all(true);
+    }
+
+    void change_notes(const std::vector<int>& notes) {
+        if (notes == held_notes) return;
+        scheduled.clear();
+
+        for (auto& voice : voices) {
+            if (!voice.active || !voice.gate) continue;
+            if (std::find(notes.begin(), notes.end(), voice.note) == notes.end()) {
+                voice.gate = false;
+                voice.fast_release = true;
+            }
+        }
+
+        held_notes = notes;
+        if (held_notes.empty()) {
+            release_all(true);
+            arp_note = -1;
+            return;
+        }
+
+        if (mode == PlayMode::Pad || mode == PlayMode::Strum) {
+            for (int note : held_notes) {
+                const bool sounding = std::any_of(voices.begin(), voices.end(), [note](const Voice& voice) {
+                    return voice.active && voice.gate && voice.note == note;
+                });
+                if (!sounding) start_note(note);
+            }
+        } else {
+            if (arp_note >= 0 && std::find(held_notes.begin(), held_notes.end(), arp_note) == held_notes.end()) {
+                stop_note(arp_note, true);
+                arp_note = -1;
+                rhythm_countdown = 0;
+            }
+            arp_index %= held_notes.size();
+        }
     }
 
     void process_events() {
@@ -226,13 +289,13 @@ struct SynthEngine::Impl {
         if (held_notes.empty() || (mode != PlayMode::Arp && mode != PlayMode::Pulse)) return;
         if (rhythm_countdown > 0) { --rhythm_countdown; return; }
         if (mode == PlayMode::Arp) {
-            if (arp_note >= 0) stop_note(arp_note);
+            if (arp_note >= 0) stop_note(arp_note, true);
             arp_note = held_notes[arp_index % held_notes.size()];
             start_note(arp_note);
             arp_index = (arp_index + 1U) % held_notes.size();
             rhythm_countdown = beat_samples(0.5);
         } else {
-            release_all();
+            release_all(true);
             for (int note : held_notes) start_note(note);
             rhythm_countdown = beat_samples(1.0);
         }
@@ -411,6 +474,7 @@ struct SynthEngine::Impl {
         const float release_seconds = 0.025F + release_control * release_control * 4.5F;
         const float attack_step = 1.0F / std::max(1.0F, attack_seconds * static_cast<float>(sample_rate));
         const float release_step = 1.0F / std::max(1.0F, release_seconds * static_cast<float>(sample_rate));
+        const float fast_release_step = 1.0F / std::max(1.0F, 0.012F * static_cast<float>(sample_rate));
         const float cutoff_hz = 90.0F + tone * tone * 14500.0F;
         const float filter = 2.0F * std::sin(static_cast<float>(kPi) * std::min(0.45F, cutoff_hz / static_cast<float>(sample_rate)));
         float block_peak = 0.0F;
@@ -425,9 +489,10 @@ struct SynthEngine::Impl {
                     if (voice.env < decay_target) voice.env = std::min(decay_target, voice.env + attack_step);
                     else voice.env += (decay_target - voice.env) * 0.0008F;
                 } else {
-                    voice.env = std::max(0.0F, voice.env - release_step);
+                    const float step = voice.fast_release ? fast_release_step : release_step;
+                    voice.env = std::max(0.0F, voice.env - step);
                 }
-                if (!voice.gate && voice.env <= kEpsilon) { voice.active = false; continue; }
+                if (!voice.gate && voice.env <= kEpsilon) { voice.active = false; voice.fast_release = false; continue; }
                 ++active;
                 float sample = voice_sample(voice, p, tone, body, motion) * voice.env * 0.24F * p.level;
                 voice.low += filter * voice.band;
@@ -506,12 +571,13 @@ void SynthEngine::set_mode(PlayMode value) { std::scoped_lock lock(impl_->mutex)
 void SynthEngine::set_bpm(int value) { std::scoped_lock lock(impl_->mutex); impl_->bpm = std::clamp(value, 40, 240); }
 void SynthEngine::set_latch(bool value) { std::scoped_lock lock(impl_->mutex); impl_->latch = value; if (!value && impl_->held_notes.empty()) impl_->release_all(); }
 void SynthEngine::play_chord(const std::vector<int>& notes) { std::scoped_lock lock(impl_->mutex); impl_->set_notes(notes); }
+void SynthEngine::change_chord(const std::vector<int>& notes) { std::scoped_lock lock(impl_->mutex); impl_->change_notes(notes); }
 void SynthEngine::release_chord() {
     std::scoped_lock lock(impl_->mutex); if (impl_->latch) return; impl_->held_notes.clear(); impl_->scheduled.clear(); impl_->release_all(); impl_->arp_note = -1;
 }
 void SynthEngine::all_notes_off() {
     std::scoped_lock lock(impl_->mutex); impl_->held_notes.clear(); impl_->scheduled.clear();
-    for (auto& voice : impl_->voices) { voice.active = false; voice.gate = false; voice.env = 0.0F; }
+    for (auto& voice : impl_->voices) { voice.active = false; voice.gate = false; voice.fast_release = false; voice.env = 0.0F; }
 }
 float SynthEngine::output_peak() const { return impl_->peak.load(std::memory_order_relaxed); }
 void SynthEngine::render(float* interleaved_stereo, std::size_t frames) { std::scoped_lock lock(impl_->mutex); impl_->render_locked(interleaved_stereo, frames); }

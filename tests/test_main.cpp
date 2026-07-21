@@ -169,6 +169,28 @@ int main() {
     const auto cleared_delay = synth.render_copy(2048);
     CHECK(absolute_peak(cleared_delay) < 0.00001F);
 
+    SynthEngine rapid(48000.0);
+    rapid.set_preset(1);
+    const std::array<std::vector<int>, 4> rapid_chords{{
+        {48, 55, 60, 64}, {50, 57, 62, 65}, {52, 59, 64, 67}, {53, 60, 65, 69}
+    }};
+    for (int hit = 0; hit < 240; ++hit) {
+        rapid.play_chord(rapid_chords[static_cast<std::size_t>(hit) % rapid_chords.size()]);
+        const auto attack = rapid.render_copy(512);
+        CHECK(std::all_of(attack.begin(), attack.end(), [](float sample) { return std::isfinite(sample); }));
+        CHECK(absolute_peak(attack) <= 1.001F);
+        rapid.release_chord();
+        const auto gap = rapid.render_copy(128);
+        CHECK(std::all_of(gap.begin(), gap.end(), [](float sample) { return std::isfinite(sample); }));
+    }
+
+    rapid.play_chord({48, 55, 60, 64});
+    static_cast<void>(rapid.render_copy(1024));
+    rapid.change_chord({48, 55, 60, 65});
+    const auto legato = rapid.render_copy(2048);
+    CHECK(std::all_of(legato.begin(), legato.end(), [](float sample) { return std::isfinite(sample); }));
+    CHECK(absolute_peak(legato) <= 1.001F);
+
     if (failures != 0) {
         std::cerr << failures << " BRKCHRD checks failed\n";
         return 1;
