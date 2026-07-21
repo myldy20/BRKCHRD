@@ -16,6 +16,16 @@
   <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0--or--later-8f8699?labelColor=111514">
 </p>
 
+## Download / Скачать
+
+Choose the package for your firmware. These are ready-to-install builds, not the green **Code → Download ZIP** source archive.
+
+Выберите архив под свою прошивку. Это готовые сборки; зелёная кнопка **Code → Download ZIP** скачивает исходники и для установки не подходит.
+
+- **Knulli / PortMaster:** [Download `brkchrd-v0.6.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-portmaster.zip)
+- **NextUI (`tg5040`):** [Download `brkchrd-v0.6.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-nextui-tg5040.zip)
+- [Open the latest release and its Assets / Открыть последний релиз и раздел Assets](https://github.com/myldy20/BRKCHRD/releases/latest)
+
 **English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [NextUI](docs/install.nextui.en.md) · [Architecture](docs/architecture.en.md) · [Development](docs/development.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Licensing](docs/licensing.en.md)
 
 **Русский:** [Руководство](docs/manual.ru.md) · [Управление](docs/controls.ru.md) · [Звуковой движок](docs/sound-design.ru.md) · [Установка](docs/install.ru.md) · [NextUI](docs/install.nextui.ru.md) · [Архитектура](docs/architecture.ru.md) · [Разработка](docs/development.ru.md) · [Диагностика](docs/troubleshooting.ru.md) · [Лицензирование](docs/licensing.ru.md)
