@@ -6,33 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-second-feedback:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/brkchrd-060-truth-safety'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/brkchrd-060-truth-safety
-          fetch-depth: 0
-      - name: Apply second hardware feedback
-        run: |
-          test -f tools/apply-second-hardware-feedback.trigger || exit 0
-          python3 tools/apply-second-hardware-feedback.py
-          rm -f tools/apply-second-hardware-feedback.py tools/apply-second-hardware-feedback.trigger
-          git config user.name 'myldy20'
-          git config user.email 'myldy20@users.noreply.github.com'
-          git add -A
-          git diff --cached --quiet && exit 0
-          git commit -m 'Stabilize deep echo, unify chord labels and install PortMaster artwork'
-          git push origin HEAD:agent/brkchrd-060-truth-safety
-
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -78,6 +58,7 @@ jobs:
           test -f assets/branding/brkchrd-logo.svg
           test -f assets/branding/brkchrd-banner.jpg
           test -f packaging/portmaster/brkchrd/screenshot.jpg
+          test -x packaging/portmaster/brkchrd/install_metadata.sh
           test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
@@ -132,6 +113,8 @@ jobs:
           unzip -l dist/brkchrd-v0.5.2-portmaster.zip | tee /tmp/portmaster.txt
           grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
+          grep -q 'brkchrd/install_metadata.sh' /tmp/portmaster.txt
+          grep -q 'brkchrd/cover.jpg' /tmp/portmaster.txt
           grep -q 'brkchrd/docs/manual.en.md' /tmp/portmaster.txt
           grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
           grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
