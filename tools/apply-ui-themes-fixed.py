@@ -9,9 +9,15 @@ if marker not in source:
 source = source[:source.index(marker)] + r'''workflow_path = ROOT / ".github" / "workflows" / "build.yml"
 workflow = workflow_path.read_text()
 
-old_config = "printf 'language 1\\nchorddpad 1\\n' > /tmp/brkchrd-ru/brkchrd.cfg"
+escaped_config = "printf 'language 1\\nchorddpad 1\\n' > /tmp/brkchrd-ru/brkchrd.cfg"
+literal_config = "printf 'language 1\nchorddpad 1\n' > /tmp/brkchrd-ru/brkchrd.cfg"
 new_config = "printf 'language 1\\nchorddpad 1\\nuitheme 1\\n' > /tmp/brkchrd-ru/brkchrd.cfg"
-workflow = replace_once(workflow, old_config, new_config, "theme config smoke")
+if escaped_config in workflow:
+    workflow = workflow.replace(escaped_config, new_config, 1)
+elif literal_config in workflow:
+    workflow = workflow.replace(literal_config, new_config, 1)
+else:
+    raise RuntimeError("theme config smoke fixture missing")
 
 render_marker = "      - name: Render sixteen-preset demo\n"
 theme_smoke = r'''      - name: SDL startup smoke test for all UI palettes
