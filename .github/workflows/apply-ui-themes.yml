@@ -1,0 +1,33 @@
+name: apply-ui-themes
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-060-truth-safety
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-ui-themes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-060-truth-safety
+          fetch-depth: 0
+      - name: Apply palettes, documentation and version update
+        run: |
+          python3 tools/apply-ui-themes.py
+          rm -f tools/apply-ui-themes.py .github/workflows/apply-ui-themes.yml
+          git config user.name 'myldy20'
+          git config user.email 'myldy20@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add selectable UI palettes and unobtrusive chord colour gestures'
+          git push origin HEAD:agent/brkchrd-060-truth-safety
