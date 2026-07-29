@@ -3,15 +3,16 @@
 ## Repository map
 
 ```text
-include/brkchrd/       public C++ interfaces
-src/music.cpp          chord construction and voicing
-src/synth.cpp          voices, synthesis models and effects
-src/sdl_main.cpp       SDL input, UI, configuration and audio callback
-tests/test_main.cpp    harmonic, voicing and audio tests
-tools/render_demo.cpp  offline preset renderer
-tools/package_*.sh     PortMaster and NextUI packagers
-packaging/             launchers, metadata and platform artwork
-assets/branding/       official project identity
+include/brkchrd/          public C++ interfaces
+src/music.cpp             chord construction and voicing
+src/synth.cpp             voices, synthesis models and effects
+src/sdl_main.cpp          SDL input, UI, configuration and audio callback
+tests/test_main.cpp       harmonic, voicing and audio tests
+tools/render_demo.cpp     offline preset renderer
+tools/project_version.sh  canonical version reader
+tools/package_*.sh        PortMaster and NextUI packagers
+packaging/                launchers, metadata and platform artwork
+assets/branding/          official project identity
 ```
 
 ## Build dependencies
@@ -97,21 +98,25 @@ NextUI:
 sh tools/package_nextui.sh build-aarch64 dist
 ```
 
-Both packages include the same executable, documentation, GPL text, origin notice and third-party notices. Platform launchers only adapt paths and persistent storage.
+Both packagers read the archive version from the CMake project version through `tools/project_version.sh`. Both packages include the same executable, documentation, GPL text, origin notice and third-party notices. Platform launchers only adapt paths and persistent storage.
 
 ## Versioning and releases
 
-A release should update:
+For a release:
 
-- `kVersion` in `src/sdl_main.cpp`;
-- CMake project version;
-- default demo/output archive names;
-- README and documentation headings;
-- `pak.json` and platform metadata;
-- CI artifact names and package inspections;
-- release notes.
+1. update the CMake project version and `kVersion` in `src/sdl_main.cpp`;
+2. update README, manuals, `pak.json` and platform metadata where the displayed version appears;
+3. add `docs/releases/vX.Y.Z.md`;
+4. merge only after the normal `build` workflow is green;
+5. create and push tag `vX.Y.Z` on the release commit.
 
-Do not publish a tag until Linux tests, SDL smoke test, AArch64 tests and both package inspections pass.
+The tag-driven `.github/workflows/release.yml` verifies that the tag matches the CMake version, builds and tests the AArch64 target, creates both packages and publishes or refreshes the GitHub release. Package names and CI artifacts are derived automatically from the CMake version.
+
+Do not keep version-specific release workflows or trigger files in the repository.
+
+## Branch hygiene
+
+Merged same-repository pull-request branches are deleted automatically by `.github/workflows/repository-hygiene.yml`. Keep long-lived work only when it has an explicit purpose; otherwise use focused `agent/*` branches and merge them through pull requests.
 
 ## Contributions
 

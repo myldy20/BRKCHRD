@@ -11,9 +11,11 @@ BUILD_DIR=$(CDPATH= cd -- "$1" && pwd)
 mkdir -p "$2"
 OUTPUT_DIR=$(CDPATH= cd -- "$2" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+VERSION=$(sh "$ROOT_DIR/tools/project_version.sh")
 ASSETS="$ROOT_DIR/packaging/portmaster/brkchrd"
 STAGE="$OUTPUT_DIR/brkchrd-stage"
 PACKAGE="$STAGE/brkchrd"
+ARCHIVE="$OUTPUT_DIR/brkchrd-v${VERSION}-portmaster.zip"
 
 [ -x "$BUILD_DIR/brkchrd-sdl" ] || { echo "missing binary: $BUILD_DIR/brkchrd-sdl" >&2; exit 1; }
 rm -rf "$STAGE"
@@ -32,6 +34,6 @@ cp "$ROOT_DIR/LICENSE" "$PACKAGE/brkchrd/licenses/GPL-3.0.txt"
 cp "$ROOT_DIR/NOTICE.md" "$PACKAGE/brkchrd/licenses/NOTICE.md"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$PACKAGE/brkchrd/licenses/THIRD_PARTY_NOTICES.md"
 chmod +x "$PACKAGE/BRKCHRD.sh" "$PACKAGE/brkchrd/brkchrd-sdl.aarch64" "$PACKAGE/brkchrd/install_metadata.sh"
-(cd "$PACKAGE" && zip -9 -r "$OUTPUT_DIR/brkchrd-v0.6.0-portmaster.zip" .)
+(cd "$PACKAGE" && zip -9 -r "$ARCHIVE" .)
 rm -rf "$STAGE"
-echo "$OUTPUT_DIR/brkchrd-v0.6.0-portmaster.zip"
+echo "$ARCHIVE"
