@@ -18,6 +18,9 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - name: Read project version
+        id: version
+        run: echo "value=$(sh tools/project_version.sh)" >> "$GITHUB_OUTPUT"
       - name: Install dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libsdl2-dev
       - name: Configure Release
@@ -55,11 +58,13 @@ jobs:
             test "$status" -eq 0 -o "$status" -eq 124
           done
       - name: Render sixteen-preset demo
-        run: build/brkchrd-render brkchrd-v060-demo.wav
+        run: build/brkchrd-render "brkchrd-v${{ steps.version.outputs.value }}-demo.wav"
       - name: Check documentation, localisation, palettes, branding and licensing
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
-          grep -q 'BRKCHRD 0.6.0' docs/manual.en.md
-          grep -q 'BRKCHRD 0.6.0' docs/manual.ru.md
+          grep -q "BRKCHRD $VERSION" docs/manual.en.md
+          grep -q "BRKCHRD $VERSION" docs/manual.ru.md
           grep -q 'LANGUAGE' docs/controls.en.md
           grep -q 'ЯЗЫК' docs/controls.ru.md
           grep -q 'CHORD DPAD' docs/controls.en.md
@@ -81,8 +86,8 @@ jobs:
           test -f packaging/nextui/tg5040/.media/BRKCHRD.png
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v060-audio-demo
-          path: brkchrd-v060-demo.wav
+          name: brkchrd-v${{ steps.version.outputs.value }}-audio-demo
+          path: brkchrd-v${{ steps.version.outputs.value }}-demo.wav
       - uses: actions/upload-artifact@v4
         with:
           name: brkchrd-audio-audit
@@ -112,6 +117,9 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
+      - name: Read project version
+        id: version
+        run: echo "value=$(sh tools/project_version.sh)" >> "$GITHUB_OUTPUT"
       - name: Build and package in Ubuntu 20.04 AArch64 container
         run: |
           docker run --rm \
@@ -132,10 +140,12 @@ jobs:
           file build-aarch64/brkchrd-sdl | tee /tmp/binary.txt
           grep -q 'ARM aarch64' /tmp/binary.txt
       - name: Inspect PortMaster package
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
           file packaging/portmaster/brkchrd/screenshot.jpg | tee /tmp/screenshot.txt
           grep -Eq '640 ?x ?480' /tmp/screenshot.txt
-          unzip -l dist/brkchrd-v0.6.0-portmaster.zip | tee /tmp/portmaster.txt
+          unzip -l "dist/brkchrd-v${VERSION}-portmaster.zip" | tee /tmp/portmaster.txt
           grep -q 'BRKCHRD.sh' /tmp/portmaster.txt
           grep -q 'brkchrd/brkchrd-sdl.aarch64' /tmp/portmaster.txt
           grep -q 'brkchrd/install_metadata.sh' /tmp/portmaster.txt
@@ -144,17 +154,19 @@ jobs:
           grep -q 'brkchrd/docs/manual.ru.md' /tmp/portmaster.txt
           grep -q 'brkchrd/licenses/GPL-3.0.txt' /tmp/portmaster.txt
       - name: Inspect NextUI package
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
-          unzip -l dist/brkchrd-v0.6.0-nextui-tg5040.zip | tee /tmp/nextui.txt
+          unzip -l "dist/brkchrd-v${VERSION}-nextui-tg5040.zip" | tee /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/launch.sh' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/brkchrd-sdl.aarch64' /tmp/nextui.txt
           grep -q 'Tools/tg5040/.media/BRKCHRD.png' /tmp/nextui.txt
           grep -q 'Tools/tg5040/BRKCHRD.pak/licenses/GPL-3.0.txt' /tmp/nextui.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v060-portmaster-aarch64
-          path: dist/brkchrd-v0.6.0-portmaster.zip
+          name: brkchrd-v${{ steps.version.outputs.value }}-portmaster-aarch64
+          path: dist/brkchrd-v${{ steps.version.outputs.value }}-portmaster.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: brkchrd-v060-nextui-tg5040
-          path: dist/brkchrd-v0.6.0-nextui-tg5040.zip
+          name: brkchrd-v${{ steps.version.outputs.value }}-nextui-tg5040
+          path: dist/brkchrd-v${{ steps.version.outputs.value }}-nextui-tg5040.zip
