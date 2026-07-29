@@ -1,0 +1,105 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish, for example v0.6.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Validate tag and release notes
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(sh tools/project_version.sh)
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            TAG='${{ inputs.tag }}'
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+          test "$TAG" = "v$VERSION" || {
+            echo "tag $TAG does not match project version v$VERSION" >&2
+            exit 1
+          }
+          NOTES="docs/releases/v${VERSION}.md"
+          test -f "$NOTES" || {
+            echo "missing release notes: $NOTES" >&2
+            exit 1
+          }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "notes=$NOTES" >> "$GITHUB_OUTPUT"
+
+      - name: Build, test and package AArch64 release
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build-aarch64 dist
+          docker run --rm \
+            -v "$PWD:/src" -w /src arm64v8/ubuntu:20.04 \
+            bash -ec '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential cmake pkg-config libsdl2-dev zip file
+              cmake -S . -B build-aarch64 -DCMAKE_BUILD_TYPE=Release
+              cmake --build build-aarch64 --parallel 2
+              ctest --test-dir build-aarch64 --output-on-failure
+              strip build-aarch64/brkchrd-sdl
+              sh ./tools/package_portmaster.sh build-aarch64 dist
+              sh ./tools/package_nextui.sh build-aarch64 dist
+            '
+
+      - name: Verify release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.version.outputs.version }}'
+          PORTMASTER="dist/brkchrd-v${VERSION}-portmaster.zip"
+          NEXTUI="dist/brkchrd-v${VERSION}-nextui-tg5040.zip"
+          file build-aarch64/brkchrd-sdl | grep -q 'ARM aarch64'
+          unzip -t "$PORTMASTER"
+          unzip -t "$NEXTUI"
+          sha256sum "$PORTMASTER" "$NEXTUI" > dist/SHA256SUMS.txt
+
+      - name: Create or refresh GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION='${{ steps.version.outputs.version }}'
+          TAG='${{ steps.version.outputs.tag }}'
+          NOTES='${{ steps.version.outputs.notes }}'
+          PORTMASTER="dist/brkchrd-v${VERSION}-portmaster.zip"
+          NEXTUI="dist/brkchrd-v${VERSION}-nextui-tg5040.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$PORTMASTER" "$NEXTUI" dist/SHA256SUMS.txt --clobber
+            gh release edit "$TAG" --title "BRKCHRD $VERSION" --notes-file "$NOTES" --latest
+          else
+            gh release create "$TAG" "$PORTMASTER" "$NEXTUI" dist/SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title "BRKCHRD $VERSION" \
+              --notes-file "$NOTES" \
+              --latest
+          fi
