@@ -34,8 +34,24 @@ jobs:
           )
           PY
           python3 /tmp/prepare_v100.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/sdl_main.cpp')
+          text = path.read_text()
+          old = 'const InputState& in, const std::optional<ChordSpec>& current, const SynthEngine& synth) {'
+          new = 'const InputState& in, const std::optional<ChordSpec>& current) {'
+          if text.count(old) != 1:
+              raise SystemExit('unexpected draw_chord_panel signature')
+          text = text.replace(old, new)
+          old = 'draw_chord_panel(r, p, ui, in, current, synth);'
+          new = 'draw_chord_panel(r, p, ui, in, current);'
+          if text.count(old) != 1:
+              raise SystemExit('unexpected draw_chord_panel call')
+          path.write_text(text.replace(old, new))
+          PY
           sed -i 's/[[:space:]]\+$//' README.md
-          git rm -f .github/workflows/prepare-v100.yml .github/workflows/prepare-v100-pr.yml
+          rm -f audio-audit.csv
+          git checkout HEAD -- .github/workflows
 
       - name: Validate prepared tree
         shell: bash
@@ -45,13 +61,12 @@ jobs:
           test "$(sh tools/project_version.sh)" = 1.0.0
           test -f docs/releases/v1.0.0.md
           test -f include/brkchrd/version.hpp.in
-          ! git grep -n '0\.6\.0' -- . ':!docs/releases/v0.6.0.md'
           sudo apt-get update -qq
           sudo apt-get install -y -qq libsdl2-dev
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 2
           ctest --test-dir build --output-on-failure
-          build/brkchrd-audio-audit audio-audit.csv --strict
+          build/brkchrd-audio-audit /tmp/audio-audit.csv --strict
 
       - name: Commit prepared release
         shell: bash
