@@ -1,12 +1,12 @@
-# Installing BRKCHRD 0.6.0 on TrimUI Brick / Knulli
+# Installing BRKCHRD 1.0.0 on TrimUI Brick / Knulli
 
 ## Download the package
 
 Download the ready-to-install build here:
 
-**[`brkchrd-v0.6.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-portmaster.zip)**
+**[`brkchrd-v1.0.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v1.0.0/brkchrd-v1.0.0-portmaster.zip)**
 
-Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v0.6.0-portmaster.zip`.
+Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v1.0.0-portmaster.zip`.
 
 > Do not use the green **Code → Download ZIP** button. That archive contains source code, not the ready-to-install application.
 
@@ -14,13 +14,13 @@ Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/rele
 
 - TrimUI Brick or another compatible AArch64 handheld;
 - Knulli with PortMaster support;
-- `brkchrd-v0.6.0-portmaster.zip` from the link above;
+- `brkchrd-v1.0.0-portmaster.zip` from the link above;
 - approximately 5 MB of free space.
 
 ## Install from the SD card
 
 1. Shut down the handheld cleanly and mount its SD card.
-2. Extract the **contents** of `brkchrd-v0.6.0-portmaster.zip` into:
+2. Extract the **contents** of `brkchrd-v1.0.0-portmaster.zip` into:
 
 ```text
 /userdata/roms/ports/
@@ -42,11 +42,11 @@ Return the card, boot Knulli and refresh the game list if BRKCHRD is not visible
 Assuming the archive is in `~/Downloads` and the handheld IP is `10.53.219.134`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.6.0-portmaster.zip \
+scp ~/Downloads/brkchrd-v1.0.0-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 
 ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.6.0-portmaster.zip \
+  unzip -o /userdata/system/brkchrd-v1.0.0-portmaster.zip \
     -d /userdata/roms/ports/ &&
   chmod +x /userdata/roms/ports/BRKCHRD.sh &&
   chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
@@ -58,7 +58,7 @@ Refresh Ports or reboot after installation.
 
 ## Upgrade
 
-Extract 0.6.0 over an existing installation. The configuration format is compatible and missing settings use safe defaults.
+Extract 1.0.0 over an existing installation. The configuration format is compatible and missing settings use safe defaults.
 
 Back up the configuration before resetting or testing factory defaults:
 

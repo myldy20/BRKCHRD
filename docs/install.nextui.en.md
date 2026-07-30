@@ -1,19 +1,19 @@
-# Installing BRKCHRD 0.6.0 on NextUI
+# Installing BRKCHRD 1.0.0 on NextUI
 
 ## Download the package
 
 Download the ready-to-install Pak here:
 
-**[`brkchrd-v0.6.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-nextui-tg5040.zip)**
+**[`brkchrd-v1.0.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v1.0.0/brkchrd-v1.0.0-nextui-tg5040.zip)**
 
-Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v0.6.0-nextui-tg5040.zip`.
+Alternatively, open the [latest release](https://github.com/myldy20/BRKCHRD/releases/latest), expand **Assets** and choose `brkchrd-v1.0.0-nextui-tg5040.zip`.
 
 > Do not use the green **Code → Download ZIP** button. That archive contains source code, not the ready-to-install Pak.
 
 BRKCHRD ships as a native Pak for the `tg5040` platform:
 
 ```text
-brkchrd-v0.6.0-nextui-tg5040.zip
+brkchrd-v1.0.0-nextui-tg5040.zip
 ```
 
 ## Package layout
@@ -52,7 +52,7 @@ This preserves the selected language, CHORD DPAD mode, UI palette and all other 
 
 ## Upgrade
 
-Extract the 0.6.0 archive over the existing `Tools/tg5040/` tree. Do not remove `.userdata` unless factory defaults are required.
+Extract the 1.0.0 archive over the existing `Tools/tg5040/` tree. Do not remove `.userdata` unless factory defaults are required.
 
 To reset only BRKCHRD, rename:
 

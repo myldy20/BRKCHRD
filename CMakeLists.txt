@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
-project(brkchrd VERSION 0.6.0 LANGUAGES CXX)
+project(brkchrd VERSION 1.0.0 LANGUAGES CXX)
 
 option(BRKCHRD_BUILD_SDL "Build SDL2 handheld application" ON)
 option(BRKCHRD_BUILD_TESTS "Build tests" ON)
 option(BRKCHRD_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/brkchrd")
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/brkchrd/version.hpp.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/generated/brkchrd/version.hpp"
+  @ONLY
+)
 
 add_library(brkchrd_warnings INTERFACE)
 if(MSVC)
@@ -19,7 +26,10 @@ if(BRKCHRD_ENABLE_SANITIZERS AND NOT MSVC)
 endif()
 
 add_library(brkchrd_core src/config.cpp src/input_safety.cpp src/music.cpp src/synth.cpp)
-target_include_directories(brkchrd_core PUBLIC include)
+target_include_directories(brkchrd_core PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
 target_compile_features(brkchrd_core PUBLIC cxx_std_20)
 target_link_libraries(brkchrd_core PRIVATE brkchrd_warnings brkchrd_sanitizers)
 

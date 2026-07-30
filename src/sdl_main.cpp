@@ -3,6 +3,7 @@
 #include "brkchrd/input_safety.hpp"
 #include "brkchrd/music.hpp"
 #include "brkchrd/synth.hpp"
+#include "brkchrd/version.hpp"
 #include "ui_i18n.hpp"
 
 #include <SDL.h>
@@ -33,7 +34,6 @@ constexpr int kWidth = 512;
 constexpr int kHeight = 384;
 constexpr int kRate = 48000;
 constexpr int kFrames = 512;
-constexpr const char* kVersion = "0.6.0";
 
 struct Colour { Uint8 r, g, b, a = 255; };
 
@@ -625,7 +625,7 @@ void chord_button(SDL_Renderer* r, int x, int y, int w, int h, const std::string
 }
 
 void draw_chord_panel(SDL_Renderer* r, const PerformanceState& p, const UiState& ui,
-                      const InputState& in, const std::optional<ChordSpec>& current, const SynthEngine& synth) {
+                      const InputState& in, const std::optional<ChordSpec>& current) {
     constexpr int x = 262, y = 46, w = 238, h = 286;
     const int bank = active_bank(in, ui);
     const Direction direction = effective_direction(in, ui);
@@ -729,7 +729,7 @@ void draw_ui(SDL_Renderer* r, const PerformanceState& p, const UiState& ui, cons
     if (ui.dpad_mode == DpadMode::Chord) draw_chord_mode(r, ui, in);
     else if (ui.dpad_mode == DpadMode::Sound) draw_sound_mode(r, p, ui, in, synth);
     else draw_fx_mode(r, ui, in);
-    draw_chord_panel(r, p, ui, in, current, synth);
+    draw_chord_panel(r, p, ui, in, current);
     draw_footer(r, ui, in);
     if (!ui.toast.empty() && SDL_GetTicks() < ui.toast_until) {
         const int tw = std::min(420, text_width(ui.toast, 2, 1) + 28);
@@ -1005,8 +1005,6 @@ void handle_dpad_press(UiState& ui, PerformanceState& p, InputState& in, SynthEn
 void update_chord_hold(UiState& ui, PerformanceState& p, InputState& in, SynthEngine& synth,
                        std::optional<ChordSpec>& current, std::vector<int>& previous) {
     if (ui.settings || ui.dpad_mode != DpadMode::Chord || ui.chord_dpad != ChordDpadStyle::Hold) return;
-    const Direction direction = effective_direction(in, ui);
-    const int palette = effective_palette(in, ui);
     if (in.active_face) update_chord(p, ui, in, current, previous, synth, false);
 }
 
@@ -1130,7 +1128,9 @@ int main(int, char**) {
     InputState input; std::optional<ChordSpec> current; std::vector<int> previous;
     bool running = true; int raw_log_budget = 96;
     Uint32 next_audio_report = SDL_GetTicks() + 5000U;
-    toast(ui, brkchrd_ui::tr(ui.language, "BRKCHRD 0.6.0  LIVE CHORDS", "BRKCHRD 0.6.0  ЖИВЫЕ АККОРДЫ"), 1500U);
+    const std::string live_toast = std::string{"BRKCHRD "} + kVersion +
+        brkchrd_ui::tr(ui.language, "  LIVE CHORDS", "  ЖИВЫЕ АККОРДЫ");
+    toast(ui, live_toast, 1500U);
 
     while (running) {
         SDL_Event event{};

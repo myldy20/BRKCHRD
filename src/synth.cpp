@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <mutex>
 #include <vector>
 
@@ -67,6 +68,24 @@ constexpr std::array<Patch, 16> kPatches{{
 }};
 
 float clamp01(float value) { return std::clamp(value, 0.0F, 1.0F); }
+double normalise_sample_rate(double value) {
+    if (!std::isfinite(value) || value < 8000.0 || value > 384000.0) return 48000.0;
+    return value;
+}
+bool valid_parameter(SynthParameter parameter) {
+    const int value = static_cast<int>(parameter);
+    return value >= 0 && value < static_cast<int>(SynthParameter::Count);
+}
+bool valid_effect_type(EffectType type) {
+    const int value = static_cast<int>(type);
+    return value >= 0 && value < static_cast<int>(EffectType::Count);
+}
+PlayMode normalise_mode(PlayMode mode) {
+    switch (mode) {
+    case PlayMode::Pad: case PlayMode::Strum: case PlayMode::Arp: case PlayMode::Pulse: return mode;
+    }
+    return PlayMode::Pad;
+}
 float midi_frequency(int note) { return 440.0F * std::pow(2.0F, (static_cast<float>(note) - 69.0F) / 12.0F); }
 float sine(double phase) { return static_cast<float>(std::sin(2.0 * kPi * phase)); }
 float saw(double phase) { phase -= std::floor(phase); return static_cast<float>(phase * 2.0 - 1.0); }
@@ -560,12 +579,13 @@ struct SynthEngine::Impl {
             out[frame * 2U] = left;
             out[frame * 2U + 1U] = right;
             global_lfo += (0.03 + motion * 0.62) / sample_rate;
+            if (global_lfo >= 1.0) global_lfo -= std::floor(global_lfo);
         }
         peak.store(peak.load(std::memory_order_relaxed) * 0.86F + block_peak * 0.14F, std::memory_order_relaxed);
     }
 };
 
-SynthEngine::SynthEngine(double sample_rate) : impl_(new Impl(sample_rate)) {}
+SynthEngine::SynthEngine(double sample_rate) : impl_(new Impl(normalise_sample_rate(sample_rate))) {}
 SynthEngine::~SynthEngine() { delete impl_; }
 
 void SynthEngine::set_preset(int index) {
@@ -582,14 +602,19 @@ VoicingProfile SynthEngine::voicing_profile() const { std::scoped_lock lock(impl
 int SynthEngine::preset_count() { return static_cast<int>(kPatches.size()); }
 
 void SynthEngine::set_parameter(SynthParameter parameter, float value) {
-    std::scoped_lock lock(impl_->mutex); impl_->controls[static_cast<std::size_t>(parameter)] = clamp01(value);
+    if (!valid_parameter(parameter)) return;
+    std::scoped_lock lock(impl_->mutex);
+    impl_->controls[static_cast<std::size_t>(parameter)] = clamp01(value);
 }
 float SynthEngine::parameter(SynthParameter parameter) const {
-    std::scoped_lock lock(impl_->mutex); return impl_->controls[static_cast<std::size_t>(parameter)];
+    if (!valid_parameter(parameter)) return 0.0F;
+    std::scoped_lock lock(impl_->mutex);
+    return impl_->controls[static_cast<std::size_t>(parameter)];
 }
 void SynthEngine::set_effect(int slot, EffectSettings settings) {
     if (slot < 0 || slot >= 2) return;
     std::scoped_lock lock(impl_->mutex);
+    if (!valid_effect_type(settings.type)) settings.type = EffectType::Off;
     settings.amount = clamp01(settings.amount); settings.colour = clamp01(settings.colour);
     const std::size_t index = static_cast<std::size_t>(slot);
     const EffectSettings previous = impl_->effects[index];
@@ -615,7 +640,7 @@ std::string SynthEngine::effect_name(EffectType type) {
     }
     return "OFF";
 }
-void SynthEngine::set_mode(PlayMode value) { std::scoped_lock lock(impl_->mutex); impl_->mode = value; if (!impl_->held_notes.empty()) impl_->set_notes(impl_->held_notes); }
+void SynthEngine::set_mode(PlayMode value) { std::scoped_lock lock(impl_->mutex); impl_->mode = normalise_mode(value); if (!impl_->held_notes.empty()) impl_->set_notes(impl_->held_notes); }
 void SynthEngine::set_bpm(int value) { std::scoped_lock lock(impl_->mutex); impl_->bpm = std::clamp(value, 40, 240); }
 void SynthEngine::set_latch(bool value) { std::scoped_lock lock(impl_->mutex); impl_->latch = value; if (!value && impl_->held_notes.empty()) impl_->release_all(); }
 void SynthEngine::play_chord(const std::vector<int>& notes) { std::scoped_lock lock(impl_->mutex); impl_->set_notes(notes); }
@@ -633,10 +658,13 @@ void SynthEngine::all_notes_off() {
     impl_->begin_output_transition();
 }
 float SynthEngine::output_peak() const { return impl_->peak.load(std::memory_order_relaxed); }
-void SynthEngine::render(float* interleaved_stereo, std::size_t frames) { std::scoped_lock lock(impl_->mutex); impl_->render_locked(interleaved_stereo, frames); }
+void SynthEngine::render(float* interleaved_stereo, std::size_t frames) { if (interleaved_stereo == nullptr || frames == 0U) return; std::scoped_lock lock(impl_->mutex); impl_->render_locked(interleaved_stereo, frames); }
 std::vector<float> SynthEngine::render_copy(std::size_t frames) { std::vector<float> result(frames * 2U, 0.0F); render(result.data(), frames); return result; }
 
 bool write_wav(const std::string& path, const std::vector<float>& stereo, int sample_rate) {
+    constexpr std::size_t kMaximumSamples =
+        (static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()) - 36U) / sizeof(std::int16_t);
+    if (path.empty() || sample_rate <= 0 || stereo.size() % 2U != 0U || stereo.size() > kMaximumSamples) return false;
     std::ofstream out(path, std::ios::binary); if (!out) return false;
     const std::uint32_t bytes = static_cast<std::uint32_t>(stereo.size() * sizeof(std::int16_t));
     out.write("RIFF", 4); write_u32(out, 36U + bytes); out.write("WAVEfmt ", 8); write_u32(out, 16U); write_u16(out, 1U);

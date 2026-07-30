@@ -1,12 +1,12 @@
-# BRKCHRD 0.6.0 Contributor Hardware QA Checklist
+# BRKCHRD 1.0.0 Contributor Hardware QA Checklist
 
 This document is for a contributor, developer or release tester validating a physical TrimUI Brick. Ordinary users do not need to complete it. Automated CI already covers compilation, unit tests, headless SDL startup, audio rendering and package structure.
 
 ## Installation and basic operation
 
-- install the 0.6.0 PortMaster or NextUI package;
+- install the 1.0.0 PortMaster or NextUI package;
 - confirm the application opens and ABXY produces sound;
-- confirm the header reports 0.6.0;
+- confirm the header reports 1.0.0;
 - confirm exit returns cleanly to the frontend and silences audio.
 
 ## English and Russian interface

@@ -1,0 +1,7 @@
+#pragma once
+
+namespace brkchrd {
+
+inline constexpr char kVersion[] = "@PROJECT_VERSION@";
+
+} // namespace brkchrd

@@ -1,4 +1,4 @@
-# BRKCHRD 0.6.0 Controls — English
+# BRKCHRD 1.0.0 Controls — English
 
 ## TrimUI Brick mapping
 

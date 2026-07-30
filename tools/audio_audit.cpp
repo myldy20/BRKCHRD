@@ -157,7 +157,7 @@ std::array<FxPair, 16> performance_pairs() {
         {"A_CRUSH", fx(EffectType::Crusher, 0.95F, 0.15F), fx(EffectType::Drive, 0.72F, 0.35F)},
         {"A_DRIVE", fx(EffectType::Drive, 0.98F, 0.24F), fx(EffectType::Phaser, 0.58F, 0.78F)},
         {"A_WASH", fx(EffectType::Reverb, 1.00F, 0.92F), fx(EffectType::Chorus, 0.72F, 0.82F)},
-        {"A_DEEP_ECHO", fx(EffectType::Delay, 0.72F, 0.78F), fx(EffectType::Reverb, 0.32F, 0.66F)},
+        {"A_DEEP_ECHO", fx(EffectType::Delay, 0.84F, 0.86F), fx(EffectType::Reverb, 0.40F, 0.72F)},
         {"A_PHASE", fx(EffectType::Phaser, 1.00F, 0.88F), fx(EffectType::Chorus, 0.82F, 0.76F)},
         {"B_ABYSS", fx(EffectType::Reverb, 1.00F, 1.00F), fx(EffectType::Delay, 1.00F, 0.98F)},
         {"B_RATETRAP", fx(EffectType::Tremolo, 1.00F, 0.99F), fx(EffectType::Delay, 0.56F, 0.10F)},
