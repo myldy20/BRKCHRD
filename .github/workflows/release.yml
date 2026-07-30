@@ -83,7 +83,11 @@ jobs:
           file build-aarch64/brkchrd-sdl | grep -q 'ARM aarch64'
           unzip -t "$PORTMASTER"
           unzip -t "$NEXTUI"
-          sha256sum "$PORTMASTER" "$NEXTUI" > dist/SHA256SUMS.txt
+          (
+            cd dist
+            sha256sum "brkchrd-v${VERSION}-portmaster.zip" \
+              "brkchrd-v${VERSION}-nextui-tg5040.zip" > SHA256SUMS.txt
+          )
 
       - name: Create or refresh GitHub release
         shell: bash
