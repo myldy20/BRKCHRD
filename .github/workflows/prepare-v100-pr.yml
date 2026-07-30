@@ -34,7 +34,7 @@ jobs:
           )
           PY
           python3 /tmp/prepare_v100.py
-          git rm .github/workflows/prepare-v100.yml .github/workflows/prepare-v100-pr.yml
+          git rm -f .github/workflows/prepare-v100.yml .github/workflows/prepare-v100-pr.yml
 
       - name: Validate prepared tree
         shell: bash
