@@ -1,0 +1,42 @@
+name: check-v100-release-final
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  check:
+    if: github.head_ref == 'agent/check-v1-release-final'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Show latest permanent release run
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow release.yml --limit 3 \
+            --json databaseId,status,conclusion,headSha,createdAt,url | tee /tmp/runs.json
+          run_id=$(python3 - <<'PY'
+          import json
+          runs = json.load(open('/tmp/runs.json'))
+          print(runs[0]['databaseId'] if runs else '')
+          PY
+          )
+          test -n "$run_id"
+          gh run view "$run_id" --repo "$GITHUB_REPOSITORY" || true
+          if gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --json status,conclusion --jq '.status + ":" + (.conclusion // "")' | grep -q '^completed:failure$'; then
+            gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --log-failed || true
+            exit 1
+          fi
+
+      - name: Remove temporary status branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/check-v1-release-final" || true
