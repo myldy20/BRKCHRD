@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing version tag to publish, for example v0.6.0
+        description: Existing version tag to publish, for example v1.0.0
         required: true
         type: string
 
@@ -71,6 +71,7 @@ jobs:
               sh ./tools/package_portmaster.sh build-aarch64 dist
               sh ./tools/package_nextui.sh build-aarch64 dist
             '
+          sudo chown -R "$(id -u):$(id -g)" build-aarch64 dist
 
       - name: Verify release assets
         shell: bash
@@ -98,7 +99,7 @@ jobs:
             gh release edit "$TAG" --title "BRKCHRD $VERSION" --notes-file "$NOTES" --latest
           else
             gh release create "$TAG" "$PORTMASTER" "$NEXTUI" dist/SHA256SUMS.txt \
-              --target "$GITHUB_SHA" \
+              --verify-tag \
               --title "BRKCHRD $VERSION" \
               --notes-file "$NOTES" \
               --latest
