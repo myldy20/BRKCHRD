@@ -2,7 +2,7 @@ name: prepare-v100-pr
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened]
     branches: [main]
 
 permissions:
@@ -29,8 +29,9 @@ jobs:
           start = next(i for i, line in enumerate(source) if "python3 - <<'PY'" in line) + 1
           end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
           body = source[start:end]
-          indent = min(len(line) - len(line.lstrip()) for line in body if line.strip())
-          Path('/tmp/prepare_v100.py').write_text('\n'.join(line[indent:] for line in body) + '\n')
+          Path('/tmp/prepare_v100.py').write_text(
+              '\n'.join(line[10:] if line.startswith('          ') else line for line in body) + '\n'
+          )
           PY
           python3 /tmp/prepare_v100.py
           git rm .github/workflows/prepare-v100.yml .github/workflows/prepare-v100-pr.yml
