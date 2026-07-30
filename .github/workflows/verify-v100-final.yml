@@ -1,0 +1,59 @@
+name: verify-v100-final
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'agent/verify-v1.0-final'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for and verify published release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/brkchrd-release
+          for attempt in $(seq 1 36); do
+            rm -rf /tmp/brkchrd-release/*
+            if gh release view v1.0.0 --repo "$GITHUB_REPOSITORY" --json tagName,name,isLatest,assets > /tmp/release.json 2>/dev/null; then
+              if python3 - <<'PY'
+          import json
+          release = json.load(open('/tmp/release.json'))
+          assets = {item['name']: int(item.get('size', 0)) for item in release.get('assets', [])}
+          required = {
+              'brkchrd-v1.0.0-portmaster.zip',
+              'brkchrd-v1.0.0-nextui-tg5040.zip',
+              'SHA256SUMS.txt',
+          }
+          raise SystemExit(0 if release.get('tagName') == 'v1.0.0' and required <= assets.keys() and all(assets[name] > 0 for name in required) else 1)
+          PY
+              then
+                gh release download v1.0.0 --repo "$GITHUB_REPOSITORY" --dir /tmp/brkchrd-release \
+                  --pattern 'brkchrd-v1.0.0-portmaster.zip' \
+                  --pattern 'brkchrd-v1.0.0-nextui-tg5040.zip' \
+                  --pattern 'SHA256SUMS.txt'
+                cd /tmp/brkchrd-release
+                sha256sum -c SHA256SUMS.txt
+                unzip -t brkchrd-v1.0.0-portmaster.zip >/dev/null
+                unzip -t brkchrd-v1.0.0-nextui-tg5040.zip >/dev/null
+                cat /tmp/release.json
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo 'BRKCHRD 1.0.0 release did not become verifiable' >&2
+          exit 1
+
+      - name: Remove temporary verification branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/verify-v1.0-final" || true
