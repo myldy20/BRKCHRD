@@ -1,0 +1,352 @@
+name: prepare-v100
+
+on:
+  push:
+    branches:
+      - agent/brkchrd-1.0
+    paths:
+      - .github/workflows/prepare-v100.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/brkchrd-1.0
+          fetch-depth: 0
+
+      - name: Apply final audit and 1.0 release changes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          def replace(path, old, new, count=None):
+              file = Path(path)
+              text = file.read_text()
+              actual = text.count(old)
+              if actual == 0:
+                  raise SystemExit(f"missing expected text in {path}: {old[:80]!r}")
+              if count is not None and actual != count:
+                  raise SystemExit(f"expected {count} replacements in {path}, found {actual}")
+              file.write_text(text.replace(old, new))
+
+          replace(
+              "CMakeLists.txt",
+              "project(brkchrd VERSION 0.6.0 LANGUAGES CXX)",
+              "project(brkchrd VERSION 1.0.0 LANGUAGES CXX)",
+              1,
+          )
+          replace(
+              "CMakeLists.txt",
+              'option(BRKCHRD_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)\n',
+              'option(BRKCHRD_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)\n\n'
+              'file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/brkchrd")\n'
+              'configure_file(\n'
+              '  "${CMAKE_CURRENT_SOURCE_DIR}/include/brkchrd/version.hpp.in"\n'
+              '  "${CMAKE_CURRENT_BINARY_DIR}/generated/brkchrd/version.hpp"\n'
+              '  @ONLY\n'
+              ')\n',
+              1,
+          )
+          replace(
+              "CMakeLists.txt",
+              "target_include_directories(brkchrd_core PUBLIC include)",
+              'target_include_directories(brkchrd_core PUBLIC\n'
+              '  "${CMAKE_CURRENT_SOURCE_DIR}/include"\n'
+              '  "${CMAKE_CURRENT_BINARY_DIR}/generated"\n'
+              ')',
+              1,
+          )
+
+          Path("include/brkchrd/version.hpp.in").write_text(
+              "#pragma once\n\n"
+              "namespace brkchrd {\n\n"
+              'inline constexpr char kVersion[] = "@PROJECT_VERSION@";\n\n'
+              "} // namespace brkchrd\n"
+          )
+
+          replace(
+              "src/sdl_main.cpp",
+              '#include "brkchrd/synth.hpp"\n',
+              '#include "brkchrd/synth.hpp"\n#include "brkchrd/version.hpp"\n',
+              1,
+          )
+          replace(
+              "src/sdl_main.cpp",
+              'constexpr const char* kVersion = "0.6.0";\n',
+              "",
+              1,
+          )
+          replace(
+              "src/sdl_main.cpp",
+              "    const Direction direction = effective_direction(in, ui);\n"
+              "    const int palette = effective_palette(in, ui);\n"
+              "    if (in.active_face) update_chord(p, ui, in, current, previous, synth, false);",
+              "    if (in.active_face) update_chord(p, ui, in, current, previous, synth, false);",
+              1,
+          )
+          replace(
+              "src/sdl_main.cpp",
+              '    toast(ui, brkchrd_ui::tr(ui.language, "BRKCHRD 0.6.0  LIVE CHORDS", "BRKCHRD 0.6.0  ЖИВЫЕ АККОРДЫ"), 1500U);',
+              '    const std::string live_toast = std::string{"BRKCHRD "} + kVersion +\n'
+              '        brkchrd_ui::tr(ui.language, "  LIVE CHORDS", "  ЖИВЫЕ АККОРДЫ");\n'
+              '    toast(ui, live_toast, 1500U);',
+              1,
+          )
+
+          replace(
+              "src/synth.cpp",
+              "#include <fstream>\n#include <mutex>",
+              "#include <fstream>\n#include <limits>\n#include <mutex>",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "float clamp01(float value) { return std::clamp(value, 0.0F, 1.0F); }\n",
+              "float clamp01(float value) { return std::clamp(value, 0.0F, 1.0F); }\n"
+              "double normalise_sample_rate(double value) {\n"
+              "    if (!std::isfinite(value) || value < 8000.0 || value > 384000.0) return 48000.0;\n"
+              "    return value;\n"
+              "}\n"
+              "bool valid_parameter(SynthParameter parameter) {\n"
+              "    const int value = static_cast<int>(parameter);\n"
+              "    return value >= 0 && value < static_cast<int>(SynthParameter::Count);\n"
+              "}\n"
+              "bool valid_effect_type(EffectType type) {\n"
+              "    const int value = static_cast<int>(type);\n"
+              "    return value >= 0 && value < static_cast<int>(EffectType::Count);\n"
+              "}\n"
+              "PlayMode normalise_mode(PlayMode mode) {\n"
+              "    switch (mode) {\n"
+              "    case PlayMode::Pad: case PlayMode::Strum: case PlayMode::Arp: case PlayMode::Pulse: return mode;\n"
+              "    }\n"
+              "    return PlayMode::Pad;\n"
+              "}\n",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "            global_lfo += (0.03 + motion * 0.62) / sample_rate;\n",
+              "            global_lfo += (0.03 + motion * 0.62) / sample_rate;\n"
+              "            if (global_lfo >= 1.0) global_lfo -= std::floor(global_lfo);\n",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "SynthEngine::SynthEngine(double sample_rate) : impl_(new Impl(sample_rate)) {}",
+              "SynthEngine::SynthEngine(double sample_rate) : impl_(new Impl(normalise_sample_rate(sample_rate))) {}",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "void SynthEngine::set_parameter(SynthParameter parameter, float value) {\n"
+              "    std::scoped_lock lock(impl_->mutex); impl_->controls[static_cast<std::size_t>(parameter)] = clamp01(value);\n"
+              "}\n"
+              "float SynthEngine::parameter(SynthParameter parameter) const {\n"
+              "    std::scoped_lock lock(impl_->mutex); return impl_->controls[static_cast<std::size_t>(parameter)];\n"
+              "}",
+              "void SynthEngine::set_parameter(SynthParameter parameter, float value) {\n"
+              "    if (!valid_parameter(parameter)) return;\n"
+              "    std::scoped_lock lock(impl_->mutex);\n"
+              "    impl_->controls[static_cast<std::size_t>(parameter)] = clamp01(value);\n"
+              "}\n"
+              "float SynthEngine::parameter(SynthParameter parameter) const {\n"
+              "    if (!valid_parameter(parameter)) return 0.0F;\n"
+              "    std::scoped_lock lock(impl_->mutex);\n"
+              "    return impl_->controls[static_cast<std::size_t>(parameter)];\n"
+              "}",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "    std::scoped_lock lock(impl_->mutex);\n"
+              "    settings.amount = clamp01(settings.amount); settings.colour = clamp01(settings.colour);",
+              "    std::scoped_lock lock(impl_->mutex);\n"
+              "    if (!valid_effect_type(settings.type)) settings.type = EffectType::Off;\n"
+              "    settings.amount = clamp01(settings.amount); settings.colour = clamp01(settings.colour);",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "void SynthEngine::set_mode(PlayMode value) { std::scoped_lock lock(impl_->mutex); impl_->mode = value; if (!impl_->held_notes.empty()) impl_->set_notes(impl_->held_notes); }",
+              "void SynthEngine::set_mode(PlayMode value) { std::scoped_lock lock(impl_->mutex); impl_->mode = normalise_mode(value); if (!impl_->held_notes.empty()) impl_->set_notes(impl_->held_notes); }",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "void SynthEngine::render(float* interleaved_stereo, std::size_t frames) { std::scoped_lock lock(impl_->mutex); impl_->render_locked(interleaved_stereo, frames); }",
+              "void SynthEngine::render(float* interleaved_stereo, std::size_t frames) { if (interleaved_stereo == nullptr || frames == 0U) return; std::scoped_lock lock(impl_->mutex); impl_->render_locked(interleaved_stereo, frames); }",
+              1,
+          )
+          replace(
+              "src/synth.cpp",
+              "bool write_wav(const std::string& path, const std::vector<float>& stereo, int sample_rate) {\n"
+              "    std::ofstream out(path, std::ios::binary); if (!out) return false;\n"
+              "    const std::uint32_t bytes = static_cast<std::uint32_t>(stereo.size() * sizeof(std::int16_t));",
+              "bool write_wav(const std::string& path, const std::vector<float>& stereo, int sample_rate) {\n"
+              "    constexpr std::size_t kMaximumSamples =\n"
+              "        (static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()) - 36U) / sizeof(std::int16_t);\n"
+              "    if (path.empty() || sample_rate <= 0 || stereo.size() % 2U != 0U || stereo.size() > kMaximumSamples) return false;\n"
+              "    std::ofstream out(path, std::ios::binary); if (!out) return false;\n"
+              "    const std::uint32_t bytes = static_cast<std::uint32_t>(stereo.size() * sizeof(std::int16_t));",
+              1,
+          )
+
+          replace(
+              "tools/audio_audit.cpp",
+              '{"A_DEEP_ECHO", fx(EffectType::Delay, 0.72F, 0.78F), fx(EffectType::Reverb, 0.32F, 0.66F)},',
+              '{"A_DEEP_ECHO", fx(EffectType::Delay, 0.84F, 0.86F), fx(EffectType::Reverb, 0.40F, 0.72F)},',
+              1,
+          )
+
+          replace(
+              "tests/test_main.cpp",
+              '#include "brkchrd/synth.hpp"\n',
+              '#include "brkchrd/synth.hpp"\n#include "brkchrd/version.hpp"\n',
+              1,
+          )
+          replace(
+              "tests/test_main.cpp",
+              "    SynthEngine synth(48000.0);\n",
+              "    CHECK(std::string(kVersion) == \"1.0.0\");\n\n"
+              "    SynthEngine fallback_rate(0.0);\n"
+              "    fallback_rate.play_chord({60, 64, 67});\n"
+              "    const auto fallback_audio = fallback_rate.render_copy(2048);\n"
+              "    CHECK(std::all_of(fallback_audio.begin(), fallback_audio.end(), [](float sample) { return std::isfinite(sample); }));\n"
+              "    CHECK(absolute_peak(fallback_audio) > 0.001F);\n"
+              "    fallback_rate.render(nullptr, 32U);\n\n"
+              "    const std::filesystem::path invalid_wav_path = std::filesystem::temp_directory_path() /\n"
+              "        (\"brkchrd-invalid-wav-\" + std::to_string(unique) + \".wav\");\n"
+              "    CHECK(!write_wav(invalid_wav_path.string(), {0.0F}, 48000));\n"
+              "    CHECK(!std::filesystem::exists(invalid_wav_path));\n\n"
+              "    SynthEngine synth(48000.0);\n",
+              1,
+          )
+          replace(
+              "tests/test_main.cpp",
+              "    synth.set_parameter(SynthParameter::Tone, 0.9F);\n"
+              "    CHECK(std::abs(synth.parameter(SynthParameter::Tone) - 0.9F) < 0.001F);\n"
+              "    synth.set_effect(0, {EffectType::Crusher, 0.5F, 0.2F});",
+              "    synth.set_parameter(SynthParameter::Tone, 0.9F);\n"
+              "    CHECK(std::abs(synth.parameter(SynthParameter::Tone) - 0.9F) < 0.001F);\n"
+              "    synth.set_parameter(SynthParameter::Count, 1.0F);\n"
+              "    CHECK(synth.parameter(SynthParameter::Count) == 0.0F);\n"
+              "    synth.set_effect(0, {static_cast<EffectType>(999), 0.5F, 0.2F});\n"
+              "    CHECK(synth.effect(0).type == EffectType::Off);\n"
+              "    synth.set_effect(0, {EffectType::Crusher, 0.5F, 0.2F});",
+              1,
+          )
+
+          historical = {"docs/releases/v0.6.0.md"}
+          result = subprocess.run(
+              ["git", "grep", "-l", "0\\.6\\.0"],
+              check=False,
+              text=True,
+              capture_output=True,
+          )
+          for name in result.stdout.splitlines():
+              if name in historical or name == ".github/workflows/prepare-v100.yml":
+                  continue
+              path = Path(name)
+              path.write_text(path.read_text().replace("0.6.0", "1.0.0"))
+
+          readme = Path("README.md")
+          readme_text = readme.read_text()
+          marker = "</p>\n\n## Download / Скачать"
+          status = (
+              "</p>\n\n"
+              "> **Project status / Статус проекта:** BRKCHRD 1.0 is a feature-complete proof of concept and a small standalone instrument for anyone who wants to play with it. Future platform-level work such as MIDI, sequencing and modular integration is being explored separately in BRKSTN; no new BRKCHRD feature roadmap is currently planned.  \n"
+              "> **BRKCHRD 1.0** — завершённый proof of concept и самостоятельная музыкальная игрушка для всех желающих. MIDI, секвенсоры и модульная интеграция рассматриваются отдельно на уровне платформы BRKSTN; новых функций для BRKCHRD пока не планируется.\n\n"
+              "## Download / Скачать"
+          )
+          if marker not in readme_text:
+              raise SystemExit("README status insertion point missing")
+          readme.write_text(readme_text.replace(marker, status, 1))
+
+          for name, heading, paragraph in (
+              (
+                  "docs/development.en.md",
+                  "## Maintenance scope\n\n",
+                  "BRKCHRD 1.0 is feature-complete and maintained as a stable proof of concept. Changes should be limited to reproducible defects, compatibility fixes, documentation and release engineering. Platform-level MIDI, sequencing and module hosting belong to the separate BRKSTN exploration rather than this repository.\n\n",
+              ),
+              (
+                  "docs/development.ru.md",
+                  "## Режим сопровождения\n\n",
+                  "BRKCHRD 1.0 считается функционально завершённым proof of concept. Изменения ограничиваются воспроизводимыми дефектами, совместимостью, документацией и выпуском исправлений. MIDI, секвенсоры и размещение модулей относятся к отдельной платформенной гипотезе BRKSTN, а не к этому репозиторию.\n\n",
+              ),
+          ):
+              path = Path(name)
+              text = path.read_text()
+              marker = "## Contributions\n" if name.endswith("en.md") else "## Вклады в проект\n"
+              if marker not in text:
+                  raise SystemExit(f"maintenance insertion point missing: {name}")
+              path.write_text(text.replace(marker, heading + paragraph + marker, 1))
+
+          Path("docs/releases/v1.0.0.md").write_text("""# BRKCHRD 1.0.0
+
+BRKCHRD 1.0.0 marks the feature-complete release of the original TrimUI Brick chord-instrument proof of concept.
+
+## What 1.0 means
+
+- the current harmony, synthesis, performance and bilingual UI feature set is considered complete;
+- the project remains available as a standalone instrument and reference implementation;
+- future MIDI, sequencing and modular-host work is intentionally deferred to the separate BRKSTN platform hypothesis;
+- maintenance focuses on reproducible bugs, compatibility and documentation rather than feature expansion.
+
+## Final audit hardening
+
+- validate the public synth sample rate and safely fall back to 48 kHz for invalid values;
+- reject invalid public parameter, effect and play-mode enum values instead of indexing outside internal arrays;
+- safely ignore null render buffers and reject malformed or oversized WAV output requests;
+- periodically wrap the global modulation phase to preserve long-session numerical precision;
+- make the application version come from the canonical CMake project version;
+- align the strict audio audit with the actual DEEP ECHO performance gesture values;
+- remove two unused hold-mode locals found during the final warning review.
+
+## Validation
+
+The release is validated with Linux and native AArch64 builds, executable tests, ASan/UBSan, SDL smoke tests in English and Russian, all UI palettes, the strict exhaustive audio-path audit, and PortMaster/NextUI package inspection.
+
+## Download
+
+Choose one package from the release assets:
+
+- `brkchrd-v1.0.0-portmaster.zip` for Knulli / PortMaster;
+- `brkchrd-v1.0.0-nextui-tg5040.zip` for NextUI on `tg5040` devices.
+""")
+          PY
+
+      - name: Remove one-shot preparation workflow
+        run: git rm .github/workflows/prepare-v100.yml
+
+      - name: Validate prepared tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test "$(sh tools/project_version.sh)" = 1.0.0
+          test -f docs/releases/v1.0.0.md
+          test -f include/brkchrd/version.hpp.in
+          ! git grep -n '0\.6\.0' -- . ':!docs/releases/v0.6.0.md'
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libsdl2-dev
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          build/brkchrd-audio-audit audio-audit.csv --strict
+
+      - name: Commit prepared release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name myldy20
+          git config user.email myldy20@users.noreply.github.com
+          git add -A
+          git commit -m 'Prepare BRKCHRD 1.0.0'
+          git push origin HEAD:agent/brkchrd-1.0
