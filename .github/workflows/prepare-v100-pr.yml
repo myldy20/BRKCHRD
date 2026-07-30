@@ -34,6 +34,7 @@ jobs:
           )
           PY
           python3 /tmp/prepare_v100.py
+          sed -i 's/[[:space:]]\+$//' README.md
           git rm -f .github/workflows/prepare-v100.yml .github/workflows/prepare-v100-pr.yml
 
       - name: Validate prepared tree
