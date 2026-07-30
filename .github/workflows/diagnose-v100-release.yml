@@ -1,0 +1,41 @@
+name: diagnose-v100-release
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'agent/diagnose-v1.0-release'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Show permanent release workflow runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow release.yml --limit 10 \
+            --json databaseId,event,status,conclusion,headSha,createdAt,displayTitle,url | tee /tmp/runs.json
+          run_id=$(python3 - <<'PY'
+          import json
+          runs = json.load(open('/tmp/runs.json'))
+          print(runs[0]['databaseId'] if runs else '')
+          PY
+          )
+          if [ -n "$run_id" ]; then
+            echo "LATEST_RELEASE_RUN_ID=$run_id"
+            gh run view "$run_id" --repo "$GITHUB_REPOSITORY" || true
+            gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --log-failed || true
+          fi
+
+      - name: Remove temporary diagnostic branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/diagnose-v1.0-release" || true
