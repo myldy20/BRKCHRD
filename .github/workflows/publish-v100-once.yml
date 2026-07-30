@@ -1,0 +1,55 @@
+name: publish-v100-once
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  publish:
+    if: github.head_ref == 'agent/publish-v1.0'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_SHA: ad0ba2873803c869496db3e7c3c15f52a24da569
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify final release commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" != ""
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(sh tools/project_version.sh)" = 1.0.0
+          test -f docs/releases/v1.0.0.md
+
+      - name: Create immutable 1.0.0 tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse -q --verify refs/tags/v1.0.0 >/dev/null; then
+            test "$(git rev-list -n 1 v1.0.0)" = "$EXPECTED_SHA"
+          else
+            git tag -a v1.0.0 "$EXPECTED_SHA" -m 'BRKCHRD 1.0.0'
+            git push origin refs/tags/v1.0.0
+          fi
+
+      - name: Dispatch universal release workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --ref main -f tag=v1.0.0
+
+      - name: Remove temporary publication branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/publish-v1.0" || true
