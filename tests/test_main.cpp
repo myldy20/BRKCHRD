@@ -2,6 +2,7 @@
 #include "brkchrd/input_safety.hpp"
 #include "brkchrd/music.hpp"
 #include "brkchrd/synth.hpp"
+#include "brkchrd/version.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -139,6 +140,20 @@ int main() {
     std::error_code remove_error;
     std::filesystem::remove(config_path, remove_error);
 
+    CHECK(std::string(kVersion) == "1.0.0");
+
+    SynthEngine fallback_rate(0.0);
+    fallback_rate.play_chord({60, 64, 67});
+    const auto fallback_audio = fallback_rate.render_copy(2048);
+    CHECK(std::all_of(fallback_audio.begin(), fallback_audio.end(), [](float sample) { return std::isfinite(sample); }));
+    CHECK(absolute_peak(fallback_audio) > 0.001F);
+    fallback_rate.render(nullptr, 32U);
+
+    const std::filesystem::path invalid_wav_path = std::filesystem::temp_directory_path() /
+        ("brkchrd-invalid-wav-" + std::to_string(unique) + ".wav");
+    CHECK(!write_wav(invalid_wav_path.string(), {0.0F}, 48000));
+    CHECK(!std::filesystem::exists(invalid_wav_path));
+
     SynthEngine synth(48000.0);
     CHECK(SynthEngine::preset_count() >= 16);
     CHECK(SynthEngine::effect_count() >= 8);
@@ -150,6 +165,10 @@ int main() {
     CHECK(synth.voicing_profile() == VoicingProfile::Bass);
     synth.set_parameter(SynthParameter::Tone, 0.9F);
     CHECK(std::abs(synth.parameter(SynthParameter::Tone) - 0.9F) < 0.001F);
+    synth.set_parameter(SynthParameter::Count, 1.0F);
+    CHECK(synth.parameter(SynthParameter::Count) == 0.0F);
+    synth.set_effect(0, {static_cast<EffectType>(999), 0.5F, 0.2F});
+    CHECK(synth.effect(0).type == EffectType::Off);
     synth.set_effect(0, {EffectType::Crusher, 0.5F, 0.2F});
     CHECK(synth.effect(0).type == EffectType::Crusher);
     synth.play_chord({48, 55, 60});

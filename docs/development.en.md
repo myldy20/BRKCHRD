@@ -118,6 +118,10 @@ Do not keep version-specific release workflows or trigger files in the repositor
 
 Merged same-repository pull-request branches are deleted automatically by `.github/workflows/repository-hygiene.yml`. Keep long-lived work only when it has an explicit purpose; otherwise use focused `agent/*` branches and merge them through pull requests.
 
+## Maintenance scope
+
+BRKCHRD 1.0 is feature-complete and maintained as a stable proof of concept. Changes should be limited to reproducible defects, compatibility fixes, documentation and release engineering. Platform-level MIDI, sequencing and module hosting belong to the separate BRKSTN exploration rather than this repository.
+
 ## Contributions
 
 Keep changes focused and describe physical-device validation. Do not commit generated build directories or private keys. New contributions are accepted under GPL-3.0-or-later unless agreed otherwise in advance, and redistributed derivatives must preserve the notice in `NOTICE.md`.

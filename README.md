@@ -10,11 +10,14 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.6.0-f1e3c5?labelColor=111514">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-f1e3c5?labelColor=111514">
   <img alt="Platform" src="https://img.shields.io/badge/platform-TrimUI%20Brick-8f8699?labelColor=111514">
   <img alt="Architectures" src="https://img.shields.io/badge/arch-aarch64-8f8699?labelColor=111514">
   <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0--or--later-8f8699?labelColor=111514">
 </p>
+
+> **Project status / Статус проекта:** BRKCHRD 1.0 is a feature-complete proof of concept and a small standalone instrument for anyone who wants to play with it. Future platform-level work such as MIDI, sequencing and modular integration is being explored separately in BRKSTN; no new BRKCHRD feature roadmap is currently planned.
+> **BRKCHRD 1.0** — завершённый proof of concept и самостоятельная музыкальная игрушка для всех желающих. MIDI, секвенсоры и модульная интеграция рассматриваются отдельно на уровне платформы BRKSTN; новых функций для BRKCHRD пока не планируется.
 
 ## Download / Скачать
 
@@ -22,8 +25,8 @@ Choose the package for your firmware. These are ready-to-install builds, not the
 
 Выберите архив под свою прошивку. Это готовые сборки; зелёная кнопка **Code → Download ZIP** скачивает исходники и для установки не подходит.
 
-- **Knulli / PortMaster:** [Download `brkchrd-v0.6.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-portmaster.zip)
-- **NextUI (`tg5040`):** [Download `brkchrd-v0.6.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-nextui-tg5040.zip)
+- **Knulli / PortMaster:** [Download `brkchrd-v1.0.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v1.0.0/brkchrd-v1.0.0-portmaster.zip)
+- **NextUI (`tg5040`):** [Download `brkchrd-v1.0.0-nextui-tg5040.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v1.0.0/brkchrd-v1.0.0-nextui-tg5040.zip)
 - [Open the latest release and its Assets / Открыть последний релиз и раздел Assets](https://github.com/myldy20/BRKCHRD/releases/latest)
 
 **English:** [Manual](docs/manual.en.md) · [Controls](docs/controls.en.md) · [Sound design](docs/sound-design.en.md) · [Installation](docs/install.en.md) · [NextUI](docs/install.nextui.en.md) · [Architecture](docs/architecture.en.md) · [Development](docs/development.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Licensing](docs/licensing.en.md)

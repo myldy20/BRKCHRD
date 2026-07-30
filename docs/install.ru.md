@@ -1,12 +1,12 @@
-# Установка BRKCHRD 0.6.0 на TrimUI Brick / Knulli
+# Установка BRKCHRD 1.0.0 на TrimUI Brick / Knulli
 
 ## Где скачать архив
 
 Скачайте готовую сборку здесь:
 
-**[`brkchrd-v0.6.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v0.6.0/brkchrd-v0.6.0-portmaster.zip)**
+**[`brkchrd-v1.0.0-portmaster.zip`](https://github.com/myldy20/BRKCHRD/releases/download/v1.0.0/brkchrd-v1.0.0-portmaster.zip)**
 
-Либо откройте [последний релиз](https://github.com/myldy20/BRKCHRD/releases/latest), разверните раздел **Assets** и выберите `brkchrd-v0.6.0-portmaster.zip`.
+Либо откройте [последний релиз](https://github.com/myldy20/BRKCHRD/releases/latest), разверните раздел **Assets** и выберите `brkchrd-v1.0.0-portmaster.zip`.
 
 > Не используйте зелёную кнопку **Code → Download ZIP**. Она скачивает исходный код, а не готовую программу.
 
@@ -14,13 +14,13 @@
 
 - TrimUI Brick или другая совместимая AArch64-консоль;
 - Knulli с поддержкой PortMaster;
-- архив `brkchrd-v0.6.0-portmaster.zip` по ссылке выше;
+- архив `brkchrd-v1.0.0-portmaster.zip` по ссылке выше;
 - около 5 МБ свободного места.
 
 ## Установка через SD-карту
 
 1. Корректно выключите консоль и подключите карту к компьютеру.
-2. Распакуйте **содержимое** `brkchrd-v0.6.0-portmaster.zip` в:
+2. Распакуйте **содержимое** `brkchrd-v1.0.0-portmaster.zip` в:
 
 ```text
 /userdata/roms/ports/
@@ -42,11 +42,11 @@
 Если архив лежит в `~/Downloads`, а адрес консоли — `10.53.219.134`:
 
 ```bash
-scp ~/Downloads/brkchrd-v0.6.0-portmaster.zip \
+scp ~/Downloads/brkchrd-v1.0.0-portmaster.zip \
   root@10.53.219.134:/userdata/system/
 
 ssh root@10.53.219.134 '
-  unzip -o /userdata/system/brkchrd-v0.6.0-portmaster.zip \
+  unzip -o /userdata/system/brkchrd-v1.0.0-portmaster.zip \
     -d /userdata/roms/ports/ &&
   chmod +x /userdata/roms/ports/BRKCHRD.sh &&
   chmod +x /userdata/roms/ports/brkchrd/brkchrd-sdl.aarch64 &&
@@ -58,7 +58,7 @@ ssh root@10.53.219.134 '
 
 ## Обновление
 
-Распакуйте 0.6.0 поверх существующей установки. Формат конфига совместим. Отсутствующие параметры получат безопасные значения по умолчанию.
+Распакуйте 1.0.0 поверх существующей установки. Формат конфига совместим. Отсутствующие параметры получат безопасные значения по умолчанию.
 
 Перед сбросом или проверкой заводских значений сохраните копию:
 

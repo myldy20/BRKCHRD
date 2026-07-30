@@ -1,4 +1,4 @@
-# BRKCHRD 0.6.0 Manual — English
+# BRKCHRD 1.0.0 Manual — English
 
 ## What BRKCHRD is
 
