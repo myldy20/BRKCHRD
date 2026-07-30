@@ -1,0 +1,64 @@
+name: verify-v100-once
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.head_ref == 'agent/verify-v1.0'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for published release and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if gh release view v1.0.0 --repo "$GITHUB_REPOSITORY" --json tagName,name,isLatest,assets,targetCommitish > /tmp/release.json 2>/dev/null; then
+              python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          release = json.loads(Path('/tmp/release.json').read_text())
+          assets = {item['name']: item for item in release.get('assets', [])}
+          required = {
+              'brkchrd-v1.0.0-portmaster.zip',
+              'brkchrd-v1.0.0-nextui-tg5040.zip',
+              'SHA256SUMS.txt',
+          }
+          missing = sorted(required - assets.keys())
+          if release.get('tagName') != 'v1.0.0':
+              raise SystemExit(2)
+          if missing:
+              raise SystemExit(3)
+          if any(int(assets[name].get('size', 0)) <= 0 for name in required):
+              raise SystemExit(4)
+          print(json.dumps({
+              'tag': release['tagName'],
+              'name': release['name'],
+              'latest': release.get('isLatest'),
+              'target': release.get('targetCommitish'),
+              'assets': {name: assets[name]['size'] for name in sorted(required)},
+          }, indent=2))
+          PY
+              status=$?
+              if [ "$status" -eq 0 ]; then
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo 'BRKCHRD 1.0.0 release assets were not ready in time' >&2
+          exit 1
+
+      - name: Remove temporary verification branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/verify-v1.0" || true
