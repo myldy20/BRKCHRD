@@ -1,0 +1,39 @@
+name: publish-v100-final
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  publish:
+    if: github.head_ref == 'agent/publish-v1.0-final'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-list -n 1 v1.0.0)" = "ad0ba2873803c869496db3e7c3c15f52a24da569"
+          git show v1.0.0:CMakeLists.txt | grep -q 'project(brkchrd VERSION 1.0.0'
+
+      - name: Dispatch fixed release workflow
+        shell: bash
+        run: gh workflow run release.yml --ref main -f tag=v1.0.0
+
+      - name: Remove temporary publication branch
+        if: always()
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/agent/publish-v1.0-final" || true
